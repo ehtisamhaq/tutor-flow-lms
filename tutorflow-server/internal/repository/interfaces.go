@@ -305,3 +305,16 @@ type SearchRepository interface {
 	GetTrendingSearches(ctx context.Context, limit int) ([]string, error)
 	RecordSearch(ctx context.Context, query string, userID *uuid.UUID, resultCount int64) error
 }
+
+// AnnouncementRepository interface
+type AnnouncementRepository interface {
+	Create(ctx context.Context, announcement *domain.Announcement) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Announcement, error)
+	Update(ctx context.Context, announcement *domain.Announcement) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetByCourse(ctx context.Context, courseID uuid.UUID, page, limit int) ([]domain.Announcement, int64, error)
+	GetGlobal(ctx context.Context, page, limit int) ([]domain.Announcement, int64, error)
+	GetForUser(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.Announcement, int64, error)
+	GetByAuthor(ctx context.Context, authorID uuid.UUID, page, limit int) ([]domain.Announcement, int64, error)
+	Pin(ctx context.Context, id uuid.UUID, pinned bool) error
+}
