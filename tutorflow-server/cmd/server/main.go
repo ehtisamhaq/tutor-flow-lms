@@ -20,6 +20,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/pkg/jwt"
 	"github.com/tutorflow/tutorflow-server/internal/repository/postgres"
 	"github.com/tutorflow/tutorflow-server/internal/service/email"
+	"github.com/tutorflow/tutorflow-server/internal/service/export"
 	"github.com/tutorflow/tutorflow-server/internal/service/payment"
 	"github.com/tutorflow/tutorflow-server/internal/service/push"
 	"github.com/tutorflow/tutorflow-server/internal/service/storage"
@@ -36,6 +37,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/notification"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/order"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/quiz"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/reports"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/review"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/search"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/user"
@@ -124,6 +126,8 @@ func main() {
 	searchRepo := postgres.NewSearchRepository(db)
 	announcementRepo := postgres.NewAnnouncementRepository(db)
 	pushRepo := postgres.NewPushSubscriptionRepository(db)
+	rvRepo := postgres.NewRecentlyViewedRepository(db)
+	scheduledReportRepo := postgres.NewScheduledReportRepository(db)
 
 	// Initialize services
 	storageSvc := storage.NewService(cfg.Storage)
@@ -135,6 +139,7 @@ func main() {
 		VAPIDPrivateKey: cfg.Push.VAPIDPrivateKey,
 		VAPIDSubject:    cfg.Push.VAPIDSubject,
 	}, pushRepo)
+	exportSvc := export.NewService(db)
 
 	// Initialize use cases
 	authUC := auth.NewUseCase(userRepo, refreshTokenRepo, jwtManager)
@@ -148,6 +153,7 @@ func main() {
 	notificationUC := notification.NewUseCase(notificationRepo, enrollmentRepo)
 	discussionUC := discussion.NewUseCase(discussionRepo, enrollmentRepo, courseRepo)
 	certificateUC := certificate.NewUseCase(certRepo, enrollmentRepo, courseRepo)
+	reportUC := reports.NewUseCase(scheduledReportRepo, rvRepo, courseRepo, exportSvc)
 	searchUC := search.NewUseCase(searchRepo, courseRepo, categoryRepo)
 	adminUC := admin.NewUseCase(db)
 	announcementUC := announcement.NewUseCase(announcementRepo, courseRepo, enrollmentRepo, notificationRepo)
@@ -175,6 +181,7 @@ func main() {
 	learningPathRepo := postgres.NewLearningPathRepository(db)
 	learningPathUC := learningpath.NewUseCase(learningPathRepo, enrollmentRepo, certRepo)
 	learningPathHandler := handler.NewLearningPathHandler(learningPathUC)
+	reportHandler := handler.NewReportHandler(reportUC)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -205,6 +212,32 @@ func main() {
 	messageHandler.RegisterRoutes(api, authMW)
 	pushHandler.RegisterRoutes(api, authMW)
 	learningPathHandler.RegisterRoutes(api, authMW, optionalAuthMW, adminMW)
+	reportHandler.RegisterRoutes(api, authMW, adminMW)
+
+	// Background worker for scheduled reports
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		for range ticker.C {
+			ctx := context.Background()
+			reportsDue, err := scheduledReportRepo.GetDueReports(ctx)
+			if err != nil {
+				continue
+			}
+
+			_ = exportSvc.ProcessScheduledReports(ctx, reportsDue, func(email string, data []byte, filename string) error {
+				// In a real app, send actual email with attachment
+				// For now, we just log it
+				sugar.Infof("Sending scheduled report %s to %s", filename, email)
+				return nil
+			})
+
+			for _, r := range reportsDue {
+				now := time.Now()
+				next := export.GetScheduledReportNextRun(r.Schedule, now)
+				_ = scheduledReportRepo.UpdateLastRun(ctx, r.ID, now, next)
+			}
+		}
+	}()
 
 	// Start server
 	go func() {

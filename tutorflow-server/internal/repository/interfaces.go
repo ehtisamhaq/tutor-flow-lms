@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tutorflow/tutorflow-server/internal/domain"
@@ -388,4 +389,23 @@ type LearningPathRepository interface {
 
 	// Progress
 	GetProgress(ctx context.Context, pathID, userID uuid.UUID) (*domain.LearningPathProgress, error)
+}
+
+// RecentlyViewedRepository interface
+type RecentlyViewedRepository interface {
+	Track(ctx context.Context, userID, courseID uuid.UUID) error
+	GetByUser(ctx context.Context, userID uuid.UUID, limit int) ([]domain.RecentlyViewed, error)
+	Clear(ctx context.Context, userID uuid.UUID) error
+	Delete(ctx context.Context, userID, courseID uuid.UUID) error
+}
+
+// ScheduledReportRepository interface
+type ScheduledReportRepository interface {
+	Create(ctx context.Context, report *domain.ScheduledReport) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.ScheduledReport, error)
+	GetByUser(ctx context.Context, userID uuid.UUID) ([]domain.ScheduledReport, error)
+	Update(ctx context.Context, report *domain.ScheduledReport) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetDueReports(ctx context.Context) ([]domain.ScheduledReport, error)
+	UpdateLastRun(ctx context.Context, id uuid.UUID, runAt time.Time, nextRunAt time.Time) error
 }
