@@ -318,3 +318,22 @@ type AnnouncementRepository interface {
 	GetByAuthor(ctx context.Context, authorID uuid.UUID, page, limit int) ([]domain.Announcement, int64, error)
 	Pin(ctx context.Context, id uuid.UUID, pinned bool) error
 }
+
+// MessageRepository interface
+type MessageRepository interface {
+	// Conversations
+	CreateConversation(ctx context.Context, conv *domain.Conversation) error
+	GetConversationByID(ctx context.Context, id uuid.UUID) (*domain.Conversation, error)
+	GetConversationBetween(ctx context.Context, user1, user2 uuid.UUID) (*domain.Conversation, error)
+	GetUserConversations(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.ConversationWithUnread, int64, error)
+	UpdateConversation(ctx context.Context, conv *domain.Conversation) error
+
+	// Messages
+	CreateMessage(ctx context.Context, msg *domain.Message) error
+	GetMessageByID(ctx context.Context, id uuid.UUID) (*domain.Message, error)
+	GetConversationMessages(ctx context.Context, convID uuid.UUID, page, limit int) ([]domain.Message, int64, error)
+	MarkAsRead(ctx context.Context, msgID uuid.UUID) error
+	MarkConversationAsRead(ctx context.Context, convID, userID uuid.UUID) error
+	GetUnreadCount(ctx context.Context, userID uuid.UUID) (int64, error)
+	DeleteMessage(ctx context.Context, id uuid.UUID) error
+}
