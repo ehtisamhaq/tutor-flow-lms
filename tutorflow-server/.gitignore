@@ -1,0 +1,40 @@
+# Binaries
+bin/
+*.exe
+
+# Dependencies
+vendor/
+
+# Test artifacts
+coverage.out
+coverage.html
+*.test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config files with secrets
+config/config.yaml
+.env
+.env.local
+.env.*.local
+
+# Uploads
+uploads/
+
+# Logs
+*.log
+logs/
+
+# Build cache
+.cache/
+
+# Air live reload
+tmp/
