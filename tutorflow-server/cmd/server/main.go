@@ -19,6 +19,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/pkg/database"
 	"github.com/tutorflow/tutorflow-server/internal/pkg/jwt"
 	"github.com/tutorflow/tutorflow-server/internal/repository/postgres"
+	"github.com/tutorflow/tutorflow-server/internal/service/email"
 	"github.com/tutorflow/tutorflow-server/internal/service/payment"
 	"github.com/tutorflow/tutorflow-server/internal/service/storage"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/admin"
@@ -121,6 +122,8 @@ func main() {
 	// Initialize services
 	storageSvc := storage.NewService(cfg.Storage)
 	paymentSvc := payment.NewService(cfg.Stripe)
+	emailSvc := email.NewService(cfg.Email)
+	_ = emailSvc // Email service available for use in use cases
 
 	// Initialize use cases
 	authUC := auth.NewUseCase(userRepo, refreshTokenRepo, jwtManager)
