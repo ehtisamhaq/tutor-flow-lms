@@ -17,6 +17,7 @@ type Config struct {
 	Email    EmailConfig
 	Stripe   StripeConfig
 	Redis    RedisConfig
+	Push     PushConfig
 }
 
 type ServerConfig struct {
@@ -81,6 +82,12 @@ type RedisConfig struct {
 	Port     string `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type PushConfig struct {
+	VAPIDPublicKey  string `mapstructure:"vapid_public_key"`
+	VAPIDPrivateKey string `mapstructure:"vapid_private_key"`
+	VAPIDSubject    string `mapstructure:"vapid_subject"` // mailto: or https:// URL
 }
 
 func Load() (*Config, error) {

@@ -21,6 +21,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/repository/postgres"
 	"github.com/tutorflow/tutorflow-server/internal/service/email"
 	"github.com/tutorflow/tutorflow-server/internal/service/payment"
+	"github.com/tutorflow/tutorflow-server/internal/service/push"
 	"github.com/tutorflow/tutorflow-server/internal/service/storage"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/admin"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/announcement"
@@ -121,12 +122,18 @@ func main() {
 	certRepo := postgres.NewCertificateRepository(db)
 	searchRepo := postgres.NewSearchRepository(db)
 	announcementRepo := postgres.NewAnnouncementRepository(db)
+	pushRepo := postgres.NewPushSubscriptionRepository(db)
 
 	// Initialize services
 	storageSvc := storage.NewService(cfg.Storage)
 	paymentSvc := payment.NewService(cfg.Stripe)
 	emailSvc := email.NewService(cfg.Email)
 	_ = emailSvc // Email service available for use in use cases
+	pushSvc := push.NewService(push.Config{
+		VAPIDPublicKey:  cfg.Push.VAPIDPublicKey,
+		VAPIDPrivateKey: cfg.Push.VAPIDPrivateKey,
+		VAPIDSubject:    cfg.Push.VAPIDSubject,
+	}, pushRepo)
 
 	// Initialize use cases
 	authUC := auth.NewUseCase(userRepo, refreshTokenRepo, jwtManager)
@@ -163,6 +170,7 @@ func main() {
 	adminHandler := handler.NewAdminHandler(adminUC)
 	announcementHandler := handler.NewAnnouncementHandler(announcementUC)
 	messageHandler := handler.NewMessageHandler(messageUC)
+	pushHandler := handler.NewPushHandler(pushSvc)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -191,6 +199,7 @@ func main() {
 	adminHandler.RegisterRoutes(api, authMW, adminMW)
 	announcementHandler.RegisterRoutes(api, authMW, tutorMW)
 	messageHandler.RegisterRoutes(api, authMW)
+	pushHandler.RegisterRoutes(api, authMW)
 
 	// Start server
 	go func() {

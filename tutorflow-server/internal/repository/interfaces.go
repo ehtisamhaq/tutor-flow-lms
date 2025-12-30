@@ -337,3 +337,16 @@ type MessageRepository interface {
 	GetUnreadCount(ctx context.Context, userID uuid.UUID) (int64, error)
 	DeleteMessage(ctx context.Context, id uuid.UUID) error
 }
+
+// PushSubscriptionRepository interface
+type PushSubscriptionRepository interface {
+	Create(ctx context.Context, sub *domain.PushSubscription) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.PushSubscription, error)
+	GetByEndpoint(ctx context.Context, endpoint string) (*domain.PushSubscription, error)
+	GetByUser(ctx context.Context, userID uuid.UUID) ([]domain.PushSubscription, error)
+	Update(ctx context.Context, sub *domain.PushSubscription) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteByEndpoint(ctx context.Context, endpoint string) error
+	DeleteByUser(ctx context.Context, userID uuid.UUID) error
+	GetAllUserIDs(ctx context.Context) ([]uuid.UUID, error)
+}
