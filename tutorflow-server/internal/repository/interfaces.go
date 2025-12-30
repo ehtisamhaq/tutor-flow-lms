@@ -350,3 +350,42 @@ type PushSubscriptionRepository interface {
 	DeleteByUser(ctx context.Context, userID uuid.UUID) error
 	GetAllUserIDs(ctx context.Context) ([]uuid.UUID, error)
 }
+
+// LearningPathFilters for path listing
+type LearningPathFilters struct {
+	CategoryID  *uuid.UUID
+	Level       string
+	Search      string
+	IsPublished *bool
+	IsFeatured  *bool
+	Page        int
+	Limit       int
+}
+
+// LearningPathRepository interface
+type LearningPathRepository interface {
+	// Paths
+	Create(ctx context.Context, path *domain.LearningPath) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.LearningPath, error)
+	GetBySlug(ctx context.Context, slug string) (*domain.LearningPath, error)
+	Update(ctx context.Context, path *domain.LearningPath) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context, filters LearningPathFilters) ([]domain.LearningPath, int64, error)
+	GetFeatured(ctx context.Context, limit int) ([]domain.LearningPath, error)
+	GetByCategory(ctx context.Context, categoryID uuid.UUID, limit int) ([]domain.LearningPath, error)
+
+	// Path Courses
+	AddCourse(ctx context.Context, pathCourse *domain.LearningPathCourse) error
+	RemoveCourse(ctx context.Context, pathID, courseID uuid.UUID) error
+	UpdateCoursePosition(ctx context.Context, pathID, courseID uuid.UUID, position int) error
+	GetPathCourses(ctx context.Context, pathID uuid.UUID) ([]domain.LearningPathCourse, error)
+
+	// Enrollments
+	Enroll(ctx context.Context, enrollment *domain.LearningPathEnrollment) error
+	GetEnrollment(ctx context.Context, pathID, userID uuid.UUID) (*domain.LearningPathEnrollment, error)
+	UpdateEnrollment(ctx context.Context, enrollment *domain.LearningPathEnrollment) error
+	GetUserEnrollments(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.LearningPathEnrollment, int64, error)
+
+	// Progress
+	GetProgress(ctx context.Context, pathID, userID uuid.UUID) (*domain.LearningPathProgress, error)
+}

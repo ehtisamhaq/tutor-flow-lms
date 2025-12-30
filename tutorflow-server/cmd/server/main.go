@@ -31,6 +31,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/course"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/discussion"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/enrollment"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/learningpath"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/message"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/notification"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/order"
@@ -171,6 +172,9 @@ func main() {
 	announcementHandler := handler.NewAnnouncementHandler(announcementUC)
 	messageHandler := handler.NewMessageHandler(messageUC)
 	pushHandler := handler.NewPushHandler(pushSvc)
+	learningPathRepo := postgres.NewLearningPathRepository(db)
+	learningPathUC := learningpath.NewUseCase(learningPathRepo, enrollmentRepo, certRepo)
+	learningPathHandler := handler.NewLearningPathHandler(learningPathUC)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -200,6 +204,7 @@ func main() {
 	announcementHandler.RegisterRoutes(api, authMW, tutorMW)
 	messageHandler.RegisterRoutes(api, authMW)
 	pushHandler.RegisterRoutes(api, authMW)
+	learningPathHandler.RegisterRoutes(api, authMW, optionalAuthMW, adminMW)
 
 	// Start server
 	go func() {

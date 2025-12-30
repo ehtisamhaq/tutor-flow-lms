@@ -41,50 +41,6 @@ type ReviewVote struct {
 	User   *User         `gorm:"foreignKey:UserID" json:"-"`
 }
 
-// LearningPath represents a collection of courses
-type LearningPath struct {
-	ID             uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Title          string    `gorm:"type:varchar(255);not null" json:"title"`
-	Slug           string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"slug"`
-	Description    *string   `gorm:"type:text" json:"description,omitempty"`
-	ThumbnailURL   *string   `gorm:"type:varchar(500)" json:"thumbnail_url,omitempty"`
-	CreatedBy      uuid.UUID `gorm:"type:uuid;not null" json:"created_by"`
-	EstimatedHours *int      `json:"estimated_hours,omitempty"`
-	SkillLevel     *string   `gorm:"type:varchar(20)" json:"skill_level,omitempty"`
-	IsPublished    bool      `gorm:"default:false" json:"is_published"`
-	CreatedAt      time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt      time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
-
-	Creator *User                `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
-	Courses []LearningPathCourse `gorm:"foreignKey:PathID" json:"courses,omitempty"`
-}
-
-// LearningPathCourse links courses to learning paths
-type LearningPathCourse struct {
-	ID         uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PathID     uuid.UUID `gorm:"type:uuid;index;not null" json:"path_id"`
-	CourseID   uuid.UUID `gorm:"type:uuid;not null" json:"course_id"`
-	SortOrder  int       `gorm:"not null" json:"sort_order"`
-	IsRequired bool      `gorm:"default:true" json:"is_required"`
-
-	Path   *LearningPath `gorm:"foreignKey:PathID" json:"-"`
-	Course *Course       `gorm:"foreignKey:CourseID" json:"course,omitempty"`
-}
-
-// LearningPathEnrollment represents enrollment in a learning path
-type LearningPathEnrollment struct {
-	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PathID          uuid.UUID  `gorm:"type:uuid;index;not null" json:"path_id"`
-	UserID          uuid.UUID  `gorm:"type:uuid;index;not null" json:"user_id"`
-	ProgressPercent float64    `gorm:"type:decimal(5,2);default:0" json:"progress_percent"`
-	StartedAt       time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"started_at"`
-	CompletedAt     *time.Time `json:"completed_at,omitempty"`
-	CertificateID   *uuid.UUID `gorm:"type:uuid" json:"certificate_id,omitempty"`
-
-	Path *LearningPath `gorm:"foreignKey:PathID" json:"path,omitempty"`
-	User *User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
-}
-
 // NotificationType enum
 type NotificationType string
 
