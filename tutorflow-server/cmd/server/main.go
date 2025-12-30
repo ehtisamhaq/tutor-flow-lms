@@ -21,6 +21,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/repository/postgres"
 	"github.com/tutorflow/tutorflow-server/internal/service/payment"
 	"github.com/tutorflow/tutorflow-server/internal/service/storage"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/admin"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/auth"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/cart"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/certificate"
@@ -134,6 +135,7 @@ func main() {
 	discussionUC := discussion.NewUseCase(discussionRepo, enrollmentRepo, courseRepo)
 	certificateUC := certificate.NewUseCase(certRepo, enrollmentRepo, courseRepo)
 	searchUC := search.NewUseCase(searchRepo, courseRepo, categoryRepo)
+	adminUC := admin.NewUseCase(db)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -149,6 +151,7 @@ func main() {
 	discussionHandler := handler.NewDiscussionHandler(discussionUC)
 	certificateHandler := handler.NewCertificateHandler(certificateUC)
 	searchHandler := handler.NewSearchHandler(searchUC)
+	adminHandler := handler.NewAdminHandler(adminUC)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -174,6 +177,7 @@ func main() {
 	discussionHandler.RegisterRoutes(api, authMW)
 	certificateHandler.RegisterRoutes(api, authMW)
 	searchHandler.RegisterRoutes(api, optionalAuthMW)
+	adminHandler.RegisterRoutes(api, authMW, adminMW)
 
 	// Start server
 	go func() {
