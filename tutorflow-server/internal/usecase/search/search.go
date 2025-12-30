@@ -138,20 +138,28 @@ func (uc *UseCase) GetSearchFacets(ctx context.Context, query string) (*SearchFa
 		return nil, err
 	}
 
-	// Get category names
-	categoryFacets := make([]FacetItem, 0)
-	for _, f := range facets.Categories {
-		categoryFacets = append(categoryFacets, FacetItem{
-			Label: f.Label,
-			Value: f.Value,
-			Count: f.Count,
-		})
+	// Convert category facets
+	categoryFacets := make([]FacetItem, len(facets.Categories))
+	for i, f := range facets.Categories {
+		categoryFacets[i] = FacetItem{Label: f.Label, Value: f.Value, Count: f.Count}
+	}
+
+	// Convert level facets
+	levelFacets := make([]FacetItem, len(facets.Levels))
+	for i, f := range facets.Levels {
+		levelFacets[i] = FacetItem{Label: f.Label, Value: f.Value, Count: f.Count}
+	}
+
+	// Convert price range facets
+	priceFacets := make([]FacetItem, len(facets.PriceRanges))
+	for i, f := range facets.PriceRanges {
+		priceFacets[i] = FacetItem{Label: f.Label, Value: f.Value, Count: f.Count}
 	}
 
 	return &SearchFacets{
 		Categories:  categoryFacets,
-		Levels:      facets.Levels,
-		PriceRanges: facets.PriceRanges,
+		Levels:      levelFacets,
+		PriceRanges: priceFacets,
 	}, nil
 }
 

@@ -31,6 +31,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/order"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/quiz"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/review"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/search"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/user"
 )
 
@@ -114,6 +115,7 @@ func main() {
 	reviewRepo := postgres.NewReviewRepository(db)
 	discussionRepo := postgres.NewDiscussionRepository(db)
 	certRepo := postgres.NewCertificateRepository(db)
+	searchRepo := postgres.NewSearchRepository(db)
 
 	// Initialize services
 	storageSvc := storage.NewService(cfg.Storage)
@@ -131,6 +133,7 @@ func main() {
 	notificationUC := notification.NewUseCase(notificationRepo, enrollmentRepo)
 	discussionUC := discussion.NewUseCase(discussionRepo, enrollmentRepo, courseRepo)
 	certificateUC := certificate.NewUseCase(certRepo, enrollmentRepo, courseRepo)
+	searchUC := search.NewUseCase(searchRepo, courseRepo, categoryRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -145,6 +148,7 @@ func main() {
 	notificationHandler := handler.NewNotificationHandler(notificationUC)
 	discussionHandler := handler.NewDiscussionHandler(discussionUC)
 	certificateHandler := handler.NewCertificateHandler(certificateUC)
+	searchHandler := handler.NewSearchHandler(searchUC)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -169,6 +173,7 @@ func main() {
 	notificationHandler.RegisterRoutes(api, authMW)
 	discussionHandler.RegisterRoutes(api, authMW)
 	certificateHandler.RegisterRoutes(api, authMW)
+	searchHandler.RegisterRoutes(api, optionalAuthMW)
 
 	// Start server
 	go func() {

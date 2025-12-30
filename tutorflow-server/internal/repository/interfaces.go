@@ -266,3 +266,42 @@ type CertificateRepository interface {
 	GetByUser(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.Certificate, int64, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// SearchFilters for course search
+type SearchFilters struct {
+	Query      string
+	CategoryID *uuid.UUID
+	Level      *string
+	MinPrice   *float64
+	MaxPrice   *float64
+	MinRating  *float64
+	IsFree     *bool
+	ExcludeID  *uuid.UUID
+	SortBy     string
+	SortOrder  string
+	Page       int
+	Limit      int
+}
+
+// FacetItem for search facets
+type FacetItem struct {
+	Label string
+	Value string
+	Count int64
+}
+
+// SearchFacets for filter UI
+type SearchFacets struct {
+	Categories  []FacetItem
+	Levels      []FacetItem
+	PriceRanges []FacetItem
+}
+
+// SearchRepository interface
+type SearchRepository interface {
+	SearchCourses(ctx context.Context, filters SearchFilters) ([]domain.Course, int64, error)
+	GetFacets(ctx context.Context, query string) (*SearchFacets, error)
+	GetSuggestions(ctx context.Context, query string, limit int) ([]string, error)
+	GetTrendingSearches(ctx context.Context, limit int) ([]string, error)
+	RecordSearch(ctx context.Context, query string, userID *uuid.UUID, resultCount int64) error
+}
