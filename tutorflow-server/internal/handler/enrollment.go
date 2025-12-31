@@ -248,7 +248,7 @@ func (h *EnrollmentHandler) MarkLessonComplete(c echo.Context) error {
 // @Accept json
 // @Param id path string true "Enrollment ID"
 // @Param lessonId path string true "Lesson ID"
-// @Param request body struct{Position int} true "Position"
+// @Param request body enrollment.UpdateVideoPositionInput true "Position"
 // @Success 200 {object} response.Response
 // @Router /enrollments/{id}/lessons/{lessonId}/position [put]
 func (h *EnrollmentHandler) UpdateVideoPosition(c echo.Context) error {

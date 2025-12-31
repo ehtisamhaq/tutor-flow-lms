@@ -139,21 +139,24 @@ func (h *CartHandler) ClearCart(c echo.Context) error {
 	return response.NoContent(c)
 }
 
+// MergeCartInput for merging guest cart
+type MergeCartInput struct {
+	SessionID string `json:"session_id" validate:"required"`
+}
+
 // MergeCart godoc
 // @Summary Merge guest cart with user cart
 // @Tags Cart
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body struct{SessionID string} true "Session ID"
+// @Param request body MergeCartInput true "Session ID"
 // @Success 200 {object} response.Response
 // @Router /cart/merge [post]
 func (h *CartHandler) MergeCart(c echo.Context) error {
 	claims, _ := middleware.GetClaims(c)
 
-	var input struct {
-		SessionID string `json:"session_id" validate:"required"`
-	}
+	var input MergeCartInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}

@@ -122,19 +122,22 @@ func (h *OrderHandler) GetOrder(c echo.Context) error {
 	return response.Success(c, orderObj)
 }
 
+// ConfirmPaymentInput for confirming payment
+type ConfirmPaymentInput struct {
+	PaymentIntentID string `json:"payment_intent_id" validate:"required"`
+}
+
 // ConfirmPayment godoc
 // @Summary Confirm payment
 // @Tags Orders
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body struct{PaymentIntentID string} true "Payment Intent ID"
+// @Param request body ConfirmPaymentInput true "Payment Intent ID"
 // @Success 200 {object} response.Response{data=domain.Order}
 // @Router /orders/confirm [post]
 func (h *OrderHandler) ConfirmPayment(c echo.Context) error {
-	var input struct {
-		PaymentIntentID string `json:"payment_intent_id" validate:"required"`
-	}
+	var input ConfirmPaymentInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}
@@ -189,6 +192,12 @@ func (h *OrderHandler) HandleWebhook(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "received"})
 }
 
+// ValidateCouponInput for coupon validation
+type ValidateCouponInput struct {
+	Code     string  `json:"code" validate:"required"`
+	Subtotal float64 `json:"subtotal" validate:"required,gt=0"`
+}
+
 // --- Coupon Handlers ---
 
 // ValidateCoupon godoc
@@ -197,14 +206,11 @@ func (h *OrderHandler) HandleWebhook(c echo.Context) error {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body struct{Code string; Subtotal float64} true "Coupon data"
+// @Param request body ValidateCouponInput true "Coupon data"
 // @Success 200 {object} response.Response
 // @Router /orders/coupons/validate [post]
 func (h *OrderHandler) ValidateCoupon(c echo.Context) error {
-	var input struct {
-		Code     string  `json:"code" validate:"required"`
-		Subtotal float64 `json:"subtotal" validate:"required,gt=0"`
-	}
+	var input ValidateCouponInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}
@@ -290,13 +296,18 @@ func (h *OrderHandler) DeleteCoupon(c echo.Context) error {
 	return response.NoContent(c)
 }
 
+// ToggleCouponInput for toggling coupon status
+type ToggleCouponInput struct {
+	IsActive bool `json:"is_active"`
+}
+
 // ToggleCoupon godoc
 // @Summary Toggle coupon active status (admin)
 // @Tags Coupons
 // @Security BearerAuth
 // @Accept json
 // @Param id path string true "Coupon ID"
-// @Param request body struct{IsActive bool} true "Active status"
+// @Param request body ToggleCouponInput true "Active status"
 // @Success 200 {object} response.Response
 // @Router /orders/coupons/{id}/toggle [patch]
 func (h *OrderHandler) ToggleCoupon(c echo.Context) error {
@@ -305,9 +316,7 @@ func (h *OrderHandler) ToggleCoupon(c echo.Context) error {
 		return response.BadRequest(c, "Invalid coupon ID")
 	}
 
-	var input struct {
-		IsActive bool `json:"is_active"`
-	}
+	var input ToggleCouponInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}

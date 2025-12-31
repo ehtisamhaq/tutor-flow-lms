@@ -208,13 +208,18 @@ func (h *ReviewHandler) DeleteReview(c echo.Context) error {
 	return response.NoContent(c)
 }
 
+// VoteReviewInput for voting on a review
+type VoteReviewInput struct {
+	IsHelpful bool `json:"is_helpful"`
+}
+
 // VoteReview godoc
 // @Summary Vote on a review
 // @Tags Reviews
 // @Security BearerAuth
 // @Accept json
 // @Param id path string true "Review ID"
-// @Param request body struct{IsHelpful bool} true "Vote"
+// @Param request body VoteReviewInput true "Vote"
 // @Success 200 {object} response.Response
 // @Router /reviews/{id}/vote [post]
 func (h *ReviewHandler) VoteReview(c echo.Context) error {
@@ -225,9 +230,7 @@ func (h *ReviewHandler) VoteReview(c echo.Context) error {
 
 	claims, _ := middleware.GetClaims(c)
 
-	var input struct {
-		IsHelpful bool `json:"is_helpful"`
-	}
+	var input VoteReviewInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}
@@ -273,13 +276,18 @@ func (h *ReviewHandler) ReplyToReview(c echo.Context) error {
 	return response.Success(c, reviewObj)
 }
 
+// FeatureReviewInput for featuring a review
+type FeatureReviewInput struct {
+	Featured bool `json:"featured"`
+}
+
 // FeatureReview godoc
 // @Summary Feature/unfeature a review
 // @Tags Reviews
 // @Security BearerAuth
 // @Accept json
 // @Param id path string true "Review ID"
-// @Param request body struct{Featured bool} true "Featured status"
+// @Param request body FeatureReviewInput true "Featured status"
 // @Success 200 {object} response.Response
 // @Router /reviews/{id}/feature [patch]
 func (h *ReviewHandler) FeatureReview(c echo.Context) error {
@@ -288,9 +296,7 @@ func (h *ReviewHandler) FeatureReview(c echo.Context) error {
 		return response.BadRequest(c, "Invalid review ID")
 	}
 
-	var input struct {
-		Featured bool `json:"featured"`
-	}
+	var input FeatureReviewInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}

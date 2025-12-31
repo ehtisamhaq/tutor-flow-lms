@@ -1,0 +1,6281 @@
+basePath: /api/v1
+definitions:
+  github_com_tutorflow_tutorflow-server_internal_domain.Announcement:
+    properties:
+      author:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      author_id:
+        type: string
+      content:
+        type: string
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_pinned:
+        type: boolean
+      published_at:
+        type: string
+      title:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Assignment:
+    properties:
+      allow_late_submission:
+        type: boolean
+      allowed_file_types:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      id:
+        type: string
+      instructions:
+        type: string
+      late_penalty_percent:
+        type: number
+      lesson_id:
+        type: string
+      max_file_size:
+        description: 10MB
+        type: integer
+      max_score:
+        type: number
+      submissions:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Submission'
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Category:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      parent:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+      parent_id:
+        type: string
+      slug:
+        type: string
+      sort_order:
+        type: integer
+      subcategories:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Certificate:
+    properties:
+      certificate_number:
+        type: string
+      enrollment:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+      enrollment_id:
+        type: string
+      id:
+        type: string
+      issued_at:
+        type: string
+      pdf_url:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.ContentAccess:
+    enum:
+    - free
+    - enrolled
+    - premium
+    type: string
+    x-enum-varnames:
+    - ContentAccessFree
+    - ContentAccessEnrolled
+    - ContentAccessPremium
+  github_com_tutorflow_tutorflow-server_internal_domain.Conversation:
+    properties:
+      course:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+        description: Relationships
+      course_id:
+        description: 'Optional: context for conversation'
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      last_message:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Message'
+      last_message_at:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Message'
+        type: array
+      participant1_id:
+        type: string
+      participant2_id:
+        type: string
+      updated_at:
+        type: string
+      user1:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user2:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Coupon:
+    properties:
+      applicable_courses:
+        items:
+          type: string
+        type: array
+      code:
+        type: string
+      coupon_type:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CouponType'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      max_discount:
+        type: number
+      min_purchase:
+        type: number
+      per_user_limit:
+        type: integer
+      starts_at:
+        type: string
+      usage_limit:
+        type: integer
+      used_count:
+        type: integer
+      value:
+        type: number
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.CouponType:
+    enum:
+    - percentage
+    - fixed
+    - free
+    type: string
+    x-enum-varnames:
+    - CouponTypePercentage
+    - CouponTypeFixed
+    - CouponTypeFree
+  github_com_tutorflow_tutorflow-server_internal_domain.Course:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      discount_price:
+        type: number
+      duration_hours:
+        type: integer
+      enrollments:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+        type: array
+      id:
+        type: string
+      instructor:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+        description: Relationships
+      instructor_id:
+        type: string
+      is_featured:
+        type: boolean
+      language:
+        type: string
+      level:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseLevel'
+      modules:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Module'
+        type: array
+      preview_video_url:
+        type: string
+      price:
+        type: number
+      published_at:
+        type: string
+      rating:
+        type: number
+      requirements:
+        items:
+          type: string
+        type: array
+      reviews:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+        type: array
+      short_description:
+        type: string
+      slug:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseStatus'
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      total_lessons:
+        type: integer
+      total_reviews:
+        type: integer
+      total_students:
+        type: integer
+      updated_at:
+        type: string
+      what_you_learn:
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.CourseLevel:
+    enum:
+    - beginner
+    - intermediate
+    - advanced
+    type: string
+    x-enum-varnames:
+    - CourseLevelBeginner
+    - CourseLevelIntermediate
+    - CourseLevelAdvanced
+  github_com_tutorflow_tutorflow-server_internal_domain.CourseProgressItem:
+    properties:
+      course_id:
+        type: string
+      course_title:
+        type: string
+      is_completed:
+        type: boolean
+      is_required:
+        type: boolean
+      position:
+        type: integer
+      progress:
+        type: number
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.CourseReview:
+    properties:
+      content:
+        type: string
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      created_at:
+        type: string
+      helpful_count:
+        type: integer
+      id:
+        type: string
+      instructor_reply:
+        type: string
+      instructor_reply_at:
+        type: string
+      is_featured:
+        type: boolean
+      is_verified_purchase:
+        type: boolean
+      rating:
+        description: 1.0 - 5.0
+        type: number
+      status:
+        type: string
+      title:
+        type: string
+      unhelpful_count:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.CourseStatus:
+    enum:
+    - draft
+    - published
+    - archived
+    type: string
+    x-enum-varnames:
+    - CourseStatusDraft
+    - CourseStatusPublished
+    - CourseStatusArchived
+  github_com_tutorflow_tutorflow-server_internal_domain.Discussion:
+    properties:
+      content:
+        type: string
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_pinned:
+        type: boolean
+      is_resolved:
+        type: boolean
+      lesson:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+      lesson_id:
+        type: string
+      parent:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Discussion'
+      parent_id:
+        type: string
+      replies:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Discussion'
+        type: array
+      updated_at:
+        type: string
+      upvotes:
+        type: integer
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Enrollment:
+    properties:
+      certificate:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Certificate'
+      completed_at:
+        type: string
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      enrolled_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      last_accessed_at:
+        type: string
+      order_id:
+        description: Link to purchase
+        type: string
+      progress:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LessonProgress'
+        type: array
+      progress_percent:
+        type: number
+      started_at:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.EnrollmentStatus'
+      user:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+        description: Relationships
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.EnrollmentStatus:
+    enum:
+    - pending
+    - active
+    - completed
+    - cancelled
+    - expired
+    type: string
+    x-enum-varnames:
+    - EnrollmentStatusPending
+    - EnrollmentStatusActive
+    - EnrollmentStatusCompleted
+    - EnrollmentStatusCancelled
+    - EnrollmentStatusExpired
+  github_com_tutorflow_tutorflow-server_internal_domain.ExportRequest:
+    properties:
+      date_from:
+        type: string
+      date_to:
+        type: string
+      filters:
+        additionalProperties: true
+        type: object
+      format:
+        type: string
+      report_type:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.LearningPath:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+        description: Relationships
+      category_id:
+        type: string
+      courses:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LearningPathCourse'
+        type: array
+      created_at:
+        type: string
+      created_by:
+        type: string
+      creator:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      description:
+        type: string
+      estimated_hours:
+        type: integer
+      id:
+        type: string
+      is_featured:
+        type: boolean
+      is_published:
+        type: boolean
+      level:
+        type: string
+      short_description:
+        type: string
+      slug:
+        type: string
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      total_courses:
+        description: Stats
+        type: integer
+      total_students:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.LearningPathCourse:
+    properties:
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        description: Why this course is in the path
+        type: string
+      id:
+        type: string
+      is_required:
+        type: boolean
+      path_id:
+        type: string
+      position:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.LearningPathProgress:
+    properties:
+      completed_courses:
+        type: integer
+      course_progress:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseProgressItem'
+        type: array
+      path_id:
+        type: string
+      progress:
+        type: number
+      total_courses:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Lesson:
+    properties:
+      access_type:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ContentAccess'
+      assignment:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Assignment'
+      attachments:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_preview:
+        type: boolean
+      is_published:
+        type: boolean
+      lesson_type:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LessonType'
+      module:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Module'
+        description: Relationships
+      module_id:
+        type: string
+      quiz:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+      sort_order:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+      video_assets:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.VideoAsset'
+        type: array
+      video_duration:
+        description: seconds
+        type: integer
+      video_url:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.LessonProgress:
+    properties:
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      enrollment_id:
+        type: string
+      id:
+        type: string
+      is_completed:
+        type: boolean
+      lesson:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+      lesson_id:
+        type: string
+      time_spent:
+        description: seconds
+        type: integer
+      updated_at:
+        type: string
+      video_position:
+        description: seconds
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.LessonType:
+    enum:
+    - video
+    - text
+    - quiz
+    - assignment
+    - resource
+    type: string
+    x-enum-varnames:
+    - LessonTypeVideo
+    - LessonTypeText
+    - LessonTypeQuiz
+    - LessonTypeAssignment
+    - LessonTypeResource
+  github_com_tutorflow_tutorflow-server_internal_domain.Message:
+    properties:
+      attachment_url:
+        type: string
+      content:
+        type: string
+      conversation_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      read_at:
+        type: string
+      sender:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      sender_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Module:
+    properties:
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_published:
+        type: boolean
+      lessons:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+        type: array
+      sort_order:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Order:
+    properties:
+      coupon:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Coupon'
+      coupon_id:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      discount:
+        type: number
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.OrderItem'
+        type: array
+      order_number:
+        type: string
+      paid_at:
+        type: string
+      payment_intent_id:
+        type: string
+      payment_method:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.PaymentMethod'
+      refund_reason:
+        type: string
+      refunded_at:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.OrderStatus'
+      subtotal:
+        type: number
+      tax:
+        type: number
+      total:
+        type: number
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.OrderItem:
+    properties:
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      discount:
+        type: number
+      id:
+        type: string
+      instructor_share:
+        type: number
+      order_id:
+        type: string
+      price:
+        type: number
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.OrderStatus:
+    enum:
+    - pending
+    - completed
+    - refunded
+    - failed
+    type: string
+    x-enum-varnames:
+    - OrderStatusPending
+    - OrderStatusCompleted
+    - OrderStatusRefunded
+    - OrderStatusFailed
+  github_com_tutorflow_tutorflow-server_internal_domain.PaymentMethod:
+    enum:
+    - stripe
+    - paypal
+    - bank_transfer
+    type: string
+    x-enum-varnames:
+    - PaymentMethodStripe
+    - PaymentMethodPaypal
+    - PaymentMethodBankTransfer
+  github_com_tutorflow_tutorflow-server_internal_domain.QuestionType:
+    enum:
+    - single_choice
+    - multiple_choice
+    - true_false
+    - short_answer
+    - essay
+    type: string
+    x-enum-varnames:
+    - QuestionTypeSingleChoice
+    - QuestionTypeMultipleChoice
+    - QuestionTypeTrueFalse
+    - QuestionTypeShortAnswer
+    - QuestionTypeEssay
+  github_com_tutorflow_tutorflow-server_internal_domain.Quiz:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_published:
+        type: boolean
+      lesson_id:
+        type: string
+      max_attempts:
+        type: integer
+      passing_score:
+        type: number
+      questions:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizQuestion'
+        type: array
+      show_correct_answers:
+        type: boolean
+      shuffle_questions:
+        type: boolean
+      time_limit:
+        description: minutes
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.QuizAttempt:
+    properties:
+      answers:
+        type: string
+      completed_at:
+        type: string
+      id:
+        type: string
+      max_score:
+        type: number
+      passed:
+        type: boolean
+      percentage:
+        type: number
+      quiz:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+      quiz_id:
+        type: string
+      score:
+        type: number
+      started_at:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.QuizOption:
+    properties:
+      id:
+        type: string
+      is_correct:
+        type: boolean
+      option_text:
+        type: string
+      question_id:
+        type: string
+      sort_order:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.QuizQuestion:
+    properties:
+      created_at:
+        type: string
+      explanation:
+        type: string
+      id:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizOption'
+        type: array
+      points:
+        type: number
+      question_text:
+        type: string
+      question_type:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuestionType'
+      quiz_id:
+        type: string
+      sort_order:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.RecentlyViewed:
+    properties:
+      course:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+      course_id:
+        type: string
+      id:
+        type: string
+      user_id:
+        type: string
+      viewed_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport:
+    properties:
+      created_at:
+        type: string
+      filters:
+        description: JSON filters
+        type: string
+      format:
+        description: pdf, excel, csv
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_run_at:
+        type: string
+      name:
+        type: string
+      next_run_at:
+        type: string
+      recipient_email:
+        type: string
+      report_type:
+        description: revenue, enrollments, users, courses
+        type: string
+      schedule:
+        description: daily, weekly, monthly
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.Submission:
+    properties:
+      assignment:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Assignment'
+      assignment_id:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      feedback:
+        type: string
+      file_name:
+        type: string
+      file_url:
+        type: string
+      graded_at:
+        type: string
+      graded_by:
+        type: string
+      grader:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      id:
+        type: string
+      score:
+        type: number
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.SubmissionStatus'
+      submitted_at:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.SubmissionStatus:
+    enum:
+    - pending
+    - submitted
+    - graded
+    - returned
+    type: string
+    x-enum-varnames:
+    - SubmissionStatusPending
+    - SubmissionStatusSubmitted
+    - SubmissionStatusGraded
+    - SubmissionStatusReturned
+  github_com_tutorflow_tutorflow-server_internal_domain.TutorProfile:
+    properties:
+      created_at:
+        type: string
+      hourly_rate:
+        type: number
+      id:
+        type: string
+      payout_email:
+        type: string
+      qualifications:
+        items:
+          type: string
+        type: array
+      rating:
+        type: number
+      specializations:
+        items:
+          type: string
+        type: array
+      total_courses:
+        type: integer
+      total_earnings:
+        type: number
+      total_reviews:
+        type: integer
+      total_students:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+      user_id:
+        type: string
+      years_of_experience:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.User:
+    properties:
+      avatar_url:
+        type: string
+      bio:
+        type: string
+      courses:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+        type: array
+      created_at:
+        type: string
+      email:
+        type: string
+      email_verified_at:
+        type: string
+      enrollments:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+        type: array
+      first_name:
+        type: string
+      id:
+        type: string
+      last_login_at:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.UserRole'
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.UserStatus'
+      tutor_profile:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.TutorProfile'
+        description: Relationships
+      updated_at:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_domain.UserRole:
+    enum:
+    - admin
+    - manager
+    - tutor
+    - student
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleManager
+    - RoleTutor
+    - RoleStudent
+  github_com_tutorflow_tutorflow-server_internal_domain.UserStatus:
+    enum:
+    - active
+    - inactive
+    - suspended
+    - pending
+    type: string
+    x-enum-varnames:
+    - StatusActive
+    - StatusInactive
+    - StatusSuspended
+    - StatusPending
+  github_com_tutorflow_tutorflow-server_internal_domain.VideoAsset:
+    properties:
+      bitrate:
+        type: integer
+      created_at:
+        type: string
+      drm_policy_id:
+        type: string
+      duration:
+        description: seconds
+        type: integer
+      encryption_key_id:
+        type: string
+      file_size:
+        type: integer
+      hls_playlist_url:
+        type: string
+      id:
+        type: string
+      lesson_id:
+        type: string
+      original_filename:
+        type: string
+      resolution:
+        type: string
+      status:
+        type: string
+      storage_path:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_pkg_jwt.TokenPair:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_pkg_response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.ValidationError'
+        type: array
+      message:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_pkg_response.Meta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_pkg_response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.ErrorInfo'
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Meta'
+      success:
+        type: boolean
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_pkg_response.ValidationError:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_service_push.SubscriptionInput:
+    properties:
+      endpoint:
+        type: string
+      keys:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_service_push.SubscriptionKeys'
+      user_agent:
+        type: string
+    required:
+    - endpoint
+    - keys
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_service_push.SubscriptionKeys:
+    properties:
+      auth:
+        type: string
+      p256dh:
+        type: string
+    required:
+    - auth
+    - p256dh
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.CourseStats:
+    properties:
+      avg_rating:
+        type: number
+      draft_courses:
+        type: integer
+      published_courses:
+        type: integer
+      total_courses:
+        type: integer
+      total_lessons:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.DashboardStats:
+    properties:
+      courses:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.CourseStats'
+      enrollments:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.EnrollmentStats'
+      revenue:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.RevenueStats'
+      users:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.UserStats'
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.EnrollmentStats:
+    properties:
+      active_enrollments:
+        type: integer
+      completed_courses:
+        type: integer
+      completion_rate:
+        type: number
+      enrollments_today:
+        type: integer
+      enrollments_week:
+        type: integer
+      total_enrollments:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.RecentOrder:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      order_number:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      user_email:
+        type: string
+      user_name:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.RecentUser:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.RevenueChartData:
+    properties:
+      labels:
+        items:
+          type: string
+        type: array
+      values:
+        items:
+          type: number
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.RevenueStats:
+    properties:
+      avg_order_value:
+        type: number
+      pending_payouts:
+        type: number
+      revenue_month:
+        type: number
+      revenue_today:
+        type: number
+      revenue_week:
+        type: number
+      total_orders:
+        type: integer
+      total_revenue:
+        type: number
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.SystemHealth:
+    properties:
+      active_connections:
+        type: integer
+      database_connection:
+        type: boolean
+      server_uptime:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.TopCourse:
+    properties:
+      id:
+        type: string
+      instructor:
+        type: string
+      rating:
+        type: number
+      revenue:
+        type: number
+      title:
+        type: string
+      total_students:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.TopInstructor:
+    properties:
+      avg_rating:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      total_courses:
+        type: integer
+      total_revenue:
+        type: number
+      total_students:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_admin.UserStats:
+    properties:
+      active_users:
+        type: integer
+      new_users_month:
+        type: integer
+      new_users_today:
+        type: integer
+      new_users_week:
+        type: integer
+      total_students:
+        type: integer
+      total_tutors:
+        type: integer
+      total_users:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_announcement.CreateAnnouncementInput:
+    properties:
+      content:
+        maxLength: 10000
+        minLength: 10
+        type: string
+      course_id:
+        type: string
+      is_pinned:
+        type: boolean
+      scheduled_at:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_announcement.UpdateAnnouncementInput:
+    properties:
+      content:
+        maxLength: 10000
+        minLength: 10
+        type: string
+      is_pinned:
+        type: boolean
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.ChangePasswordInput:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.LoginOutput:
+    properties:
+      tokens:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_jwt.TokenPair'
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.RefreshInput:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.RefreshOutput:
+    properties:
+      tokens:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_jwt.TokenPair'
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.RegisterInput:
+    properties:
+      email:
+        type: string
+      first_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      last_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_auth.RegisterOutput:
+    properties:
+      tokens:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_jwt.TokenPair'
+      user:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_cart.AddToCartInput:
+    properties:
+      course_id:
+        type: string
+    required:
+    - course_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_cart.CartItemSummary:
+    properties:
+      course_id:
+        type: string
+      discount_price:
+        type: number
+      effective_price:
+        type: number
+      instructor:
+        type: string
+      price:
+        type: number
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_cart.CartSummary:
+    properties:
+      coupon_applied:
+        type: string
+      discount:
+        type: number
+      items:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_cart.CartItemSummary'
+        type: array
+      subtotal:
+        type: number
+      total:
+        type: number
+      total_items:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_certificate.CertificateData:
+    properties:
+      certificate_number:
+        type: string
+      course_name:
+        type: string
+      holder_name:
+        type: string
+      instructor_name:
+        type: string
+      issued_at:
+        type: string
+      verification_url:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_certificate.CertificateVerification:
+    properties:
+      certificate_number:
+        type: string
+      course_name:
+        type: string
+      holder_name:
+        type: string
+      issued_at: {}
+      valid:
+        type: boolean
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateCategoryInput:
+    properties:
+      description:
+        type: string
+      icon:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      parent_id:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateInput:
+    properties:
+      category_ids:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      language:
+        type: string
+      level:
+        enum:
+        - beginner
+        - intermediate
+        - advanced
+        type: string
+      price:
+        minimum: 0
+        type: number
+      requirements:
+        items:
+          type: string
+        type: array
+      short_description:
+        maxLength: 500
+        type: string
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+      what_you_learn:
+        items:
+          type: string
+        type: array
+    required:
+    - level
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateLessonInput:
+    properties:
+      access_type:
+        enum:
+        - free
+        - enrolled
+        - premium
+        type: string
+      content:
+        type: string
+      description:
+        type: string
+      is_preview:
+        type: boolean
+      lesson_type:
+        enum:
+        - video
+        - text
+        - quiz
+        - assignment
+        - resource
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      video_url:
+        type: string
+    required:
+    - access_type
+    - lesson_type
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateModuleInput:
+    properties:
+      description:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateInput:
+    properties:
+      description:
+        type: string
+      discount_price:
+        minimum: 0
+        type: number
+      is_featured:
+        type: boolean
+      language:
+        type: string
+      level:
+        enum:
+        - beginner
+        - intermediate
+        - advanced
+        type: string
+      preview_video_url:
+        type: string
+      price:
+        minimum: 0
+        type: number
+      requirements:
+        items:
+          type: string
+        type: array
+      short_description:
+        maxLength: 500
+        type: string
+      thumbnail_url:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+      what_you_learn:
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateLessonInput:
+    properties:
+      access_type:
+        enum:
+        - free
+        - enrolled
+        - premium
+        type: string
+      content:
+        type: string
+      description:
+        type: string
+      is_preview:
+        type: boolean
+      is_published:
+        type: boolean
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      video_url:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateModuleInput:
+    properties:
+      description:
+        type: string
+      is_published:
+        type: boolean
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_discussion.CreateDiscussionInput:
+    properties:
+      content:
+        maxLength: 5000
+        minLength: 5
+        type: string
+      course_id:
+        type: string
+      lesson_id:
+        type: string
+      parent_id:
+        type: string
+    required:
+    - content
+    - course_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_discussion.UpdateDiscussionInput:
+    properties:
+      content:
+        maxLength: 5000
+        minLength: 5
+        type: string
+    required:
+    - content
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_enrollment.EnrollInput:
+    properties:
+      course_id:
+        type: string
+    required:
+    - course_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_enrollment.UpdateVideoPositionInput:
+    properties:
+      lesson_id:
+        type: string
+      position:
+        minimum: 0
+        type: integer
+    required:
+    - lesson_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.AddCourseInput:
+    properties:
+      course_id:
+        type: string
+      description:
+        type: string
+      is_required:
+        type: boolean
+      position:
+        type: integer
+    required:
+    - course_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.CreatePathInput:
+    properties:
+      category_id:
+        type: string
+      description:
+        maxLength: 5000
+        type: string
+      is_featured:
+        type: boolean
+      is_published:
+        type: boolean
+      level:
+        enum:
+        - beginner
+        - intermediate
+        - advanced
+        type: string
+      short_description:
+        maxLength: 500
+        type: string
+      thumbnail_url:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+    required:
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.UpdatePathInput:
+    properties:
+      category_id:
+        type: string
+      description:
+        type: string
+      is_featured:
+        type: boolean
+      is_published:
+        type: boolean
+      level:
+        type: string
+      short_description:
+        type: string
+      thumbnail_url:
+        type: string
+      title:
+        maxLength: 255
+        minLength: 5
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_message.SendMessageInput:
+    properties:
+      attachment_url:
+        type: string
+      content:
+        maxLength: 5000
+        minLength: 1
+        type: string
+      conversation_id:
+        type: string
+      recipient_id:
+        type: string
+    required:
+    - content
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateCouponInput:
+    properties:
+      code:
+        maxLength: 50
+        minLength: 3
+        type: string
+      coupon_type:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CouponType'
+        enum:
+        - percentage
+        - fixed
+        - free
+      expires_at:
+        type: string
+      max_discount:
+        type: number
+      min_purchase:
+        type: number
+      usage_limit:
+        type: integer
+      value:
+        minimum: 0
+        type: number
+    required:
+    - code
+    - coupon_type
+    - value
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateOrderInput:
+    properties:
+      coupon_code:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateOrderOutput:
+    properties:
+      checkout_url:
+        type: string
+      client_secret:
+        type: string
+      order:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Order'
+      payment_intent_id:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.AddQuestionInput:
+    properties:
+      explanation:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.OptionInput'
+        type: array
+      points:
+        minimum: 0
+        type: number
+      question_text:
+        type: string
+      question_type:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuestionType'
+        enum:
+        - single_choice
+        - multiple_choice
+        - true_false
+        - short_answer
+        - essay
+    required:
+    - question_text
+    - question_type
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.CreateAssignmentInput:
+    properties:
+      allow_late_submission:
+        type: boolean
+      allowed_file_types:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      due_date:
+        type: string
+      instructions:
+        type: string
+      late_penalty_percent:
+        type: number
+      lesson_id:
+        type: string
+      max_score:
+        type: number
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - description
+    - lesson_id
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.CreateQuizInput:
+    properties:
+      description:
+        type: string
+      lesson_id:
+        type: string
+      max_attempts:
+        minimum: 1
+        type: integer
+      passing_score:
+        maximum: 100
+        minimum: 0
+        type: number
+      show_correct_answers:
+        type: boolean
+      shuffle_questions:
+        type: boolean
+      time_limit:
+        type: integer
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - lesson_id
+    - title
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.GradeSubmissionInput:
+    properties:
+      feedback:
+        type: string
+      score:
+        minimum: 0
+        type: number
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.OptionInput:
+    properties:
+      is_correct:
+        type: boolean
+      option_text:
+        type: string
+    required:
+    - option_text
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.SubmitAnswerInput:
+    properties:
+      answers:
+        additionalProperties: true
+        description: questionID -> answer(s)
+        type: object
+    required:
+    - answers
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.SubmitAssignmentInput:
+    properties:
+      assignment_id:
+        type: string
+      content:
+        type: string
+      file_name:
+        type: string
+      file_url:
+        type: string
+    required:
+    - assignment_id
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_quiz.UpdateQuizInput:
+    properties:
+      description:
+        type: string
+      is_published:
+        type: boolean
+      max_attempts:
+        type: integer
+      passing_score:
+        type: number
+      show_correct_answers:
+        type: boolean
+      shuffle_questions:
+        type: boolean
+      time_limit:
+        type: integer
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_review.CreateReviewInput:
+    properties:
+      content:
+        maxLength: 5000
+        type: string
+      course_id:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: number
+      title:
+        maxLength: 200
+        type: string
+    required:
+    - course_id
+    - rating
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_review.RatingSummary:
+    properties:
+      average_rating:
+        type: number
+      distribution:
+        additionalProperties:
+          format: int64
+          type: integer
+        description: 1-5 star counts
+        type: object
+      total_reviews:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_review.ReplyToReviewInput:
+    properties:
+      reply:
+        maxLength: 2000
+        type: string
+    required:
+    - reply
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_review.UpdateReviewInput:
+    properties:
+      content:
+        maxLength: 5000
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: number
+      title:
+        maxLength: 200
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_search.CourseSearchResult:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      discount_price:
+        type: number
+      duration_hours:
+        type: integer
+      enrollments:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+        type: array
+      id:
+        type: string
+      instructor:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+        description: Relationships
+      instructor_id:
+        type: string
+      is_featured:
+        type: boolean
+      language:
+        type: string
+      level:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseLevel'
+      modules:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Module'
+        type: array
+      preview_video_url:
+        type: string
+      price:
+        type: number
+      published_at:
+        type: string
+      rank:
+        type: number
+      rating:
+        type: number
+      requirements:
+        items:
+          type: string
+        type: array
+      reviews:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+        type: array
+      short_description:
+        type: string
+      slug:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseStatus'
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      total_lessons:
+        type: integer
+      total_reviews:
+        type: integer
+      total_students:
+        type: integer
+      updated_at:
+        type: string
+      what_you_learn:
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_search.FacetItem:
+    properties:
+      count:
+        type: integer
+      label:
+        type: string
+      value:
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_search.SearchFacets:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.FacetItem'
+        type: array
+      levels:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.FacetItem'
+        type: array
+      price_ranges:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.FacetItem'
+        type: array
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_search.SearchResult:
+    properties:
+      courses:
+        items:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.CourseSearchResult'
+        type: array
+      facets:
+        $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.SearchFacets'
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_user.CreateUserInput:
+    properties:
+      email:
+        type: string
+      first_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      last_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.UserRole'
+        enum:
+        - admin
+        - manager
+        - tutor
+        - student
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - role
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateInput:
+    properties:
+      avatar_url:
+        type: string
+      bio:
+        maxLength: 1000
+        type: string
+      first_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      last_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateRoleInput:
+    properties:
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.UserRole'
+        enum:
+        - admin
+        - manager
+        - tutor
+        - student
+    required:
+    - role
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateStatusInput:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.UserStatus'
+        enum:
+        - active
+        - inactive
+        - suspended
+        - pending
+    required:
+    - status
+    type: object
+  github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateTutorProfileInput:
+    properties:
+      hourly_rate:
+        type: number
+      payout_email:
+        type: string
+      qualifications:
+        items:
+          type: string
+        type: array
+      specializations:
+        items:
+          type: string
+        type: array
+      years_of_experience:
+        type: integer
+    type: object
+  internal_handler.ConfirmPaymentInput:
+    properties:
+      payment_intent_id:
+        type: string
+    required:
+    - payment_intent_id
+    type: object
+  internal_handler.FeatureReviewInput:
+    properties:
+      featured:
+        type: boolean
+    type: object
+  internal_handler.MergeCartInput:
+    properties:
+      session_id:
+        type: string
+    required:
+    - session_id
+    type: object
+  internal_handler.ReorderInput:
+    properties:
+      course_order:
+        items:
+          type: string
+        type: array
+    required:
+    - course_order
+    type: object
+  internal_handler.ToggleCouponInput:
+    properties:
+      is_active:
+        type: boolean
+    type: object
+  internal_handler.UnsubscribeInput:
+    properties:
+      endpoint:
+        type: string
+    required:
+    - endpoint
+    type: object
+  internal_handler.ValidateCouponInput:
+    properties:
+      code:
+        type: string
+      subtotal:
+        type: number
+    required:
+    - code
+    - subtotal
+    type: object
+  internal_handler.VoteReviewInput:
+    properties:
+      is_helpful:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@tutorflow.com
+    name: API Support
+    url: http://www.tutorflow.com/support
+  description: This is the backend API for TutorFlow Learning Management System.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: TutorFlow LMS API
+  version: "1.0"
+paths:
+  /admin/dashboard:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.DashboardStats'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get dashboard statistics
+      tags:
+      - Admin
+  /admin/recent-orders:
+    get:
+      parameters:
+      - description: Limit (default 10)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.RecentOrder'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get recent orders
+      tags:
+      - Admin
+  /admin/recent-users:
+    get:
+      parameters:
+      - description: Limit (default 10)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.RecentUser'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get recently registered users
+      tags:
+      - Admin
+  /admin/revenue-chart:
+    get:
+      parameters:
+      - description: Period (week, month, year)
+        in: query
+        name: period
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.RevenueChartData'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get revenue chart data
+      tags:
+      - Admin
+  /admin/system-health:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.SystemHealth'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get system health status
+      tags:
+      - Admin
+  /admin/top-courses:
+    get:
+      parameters:
+      - description: Limit (default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Sort by (revenue, rating, enrollments)
+        in: query
+        name: sort_by
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.TopCourse'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get top performing courses
+      tags:
+      - Admin
+  /admin/top-instructors:
+    get:
+      parameters:
+      - description: Limit (default 10)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_admin.TopInstructor'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get top performing instructors
+      tags:
+      - Admin
+  /announcements:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Announcement data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_announcement.CreateAnnouncementInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Announcement'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create an announcement
+      tags:
+      - Announcements
+  /announcements/{id}:
+    delete:
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete an announcement
+      tags:
+      - Announcements
+    get:
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Announcement'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get announcement by ID
+      tags:
+      - Announcements
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_announcement.UpdateAnnouncementInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Announcement'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update an announcement
+      tags:
+      - Announcements
+  /announcements/{id}/pin:
+    delete:
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unpin an announcement
+      tags:
+      - Announcements
+    post:
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Pin an announcement
+      tags:
+      - Announcements
+  /announcements/course/{courseId}:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get course announcements
+      tags:
+      - Announcements
+  /announcements/feed:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my announcements feed
+      tags:
+      - Announcements
+  /announcements/global:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get global announcements
+      tags:
+      - Announcements
+  /announcements/my:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get announcements I created
+      tags:
+      - Announcements
+  /assignments:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.CreateAssignmentInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Assignment'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create assignment
+      tags:
+      - Assignments
+  /assignments/{id}:
+    get:
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Assignment'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment by ID
+      tags:
+      - Assignments
+  /assignments/{id}/my-submission:
+    get:
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Submission'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get my submission for an assignment
+      tags:
+      - Assignments
+  /assignments/{id}/submissions:
+    get:
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all submissions for an assignment (instructor)
+      tags:
+      - Assignments
+  /assignments/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Submission data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.SubmitAssignmentInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Submission'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Submit assignment
+      tags:
+      - Assignments
+  /assignments/lesson/{lessonId}:
+    get:
+      parameters:
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Assignment'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment by lesson
+      tags:
+      - Assignments
+  /assignments/submissions/{submissionId}/grade:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: Grade data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.GradeSubmissionInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Submission'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Grade a submission
+      tags:
+      - Assignments
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.LoginOutput'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.RefreshInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Auth
+  /auth/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Password change data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.ChangePasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.RefreshInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.RefreshOutput'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_auth.RegisterOutput'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Register a new user
+      tags:
+      - Auth
+  /cart:
+    delete:
+      responses:
+        "204":
+          description: No Content
+      summary: Clear cart
+      tags:
+      - Cart
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get cart
+      tags:
+      - Cart
+  /cart/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_cart.AddToCartInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Add course to cart
+      tags:
+      - Cart
+  /cart/items/{courseId}:
+    delete:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Remove course from cart
+      tags:
+      - Cart
+  /cart/merge:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Session ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.MergeCartInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Merge guest cart with user cart
+      tags:
+      - Cart
+  /cart/summary:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_cart.CartSummary'
+              type: object
+      summary: Get cart summary with totals
+      tags:
+      - Cart
+  /certificates/{id}:
+    get:
+      parameters:
+      - description: Certificate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Certificate'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get certificate by ID
+      tags:
+      - Certificates
+  /certificates/{id}/data:
+    get:
+      parameters:
+      - description: Certificate ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_certificate.CertificateData'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get certificate data for PDF generation
+      tags:
+      - Certificates
+  /certificates/my:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my certificates
+      tags:
+      - Certificates
+  /certificates/request/{courseId}:
+    post:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Certificate'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Request certificate for a completed course
+      tags:
+      - Certificates
+  /certificates/verify/{number}:
+    get:
+      parameters:
+      - description: Certificate Number
+        in: path
+        name: number
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_certificate.CertificateVerification'
+              type: object
+      summary: Verify a certificate (public)
+      tags:
+      - Certificates
+  /courses:
+    get:
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Level filter
+        in: query
+        name: level
+        type: string
+      - description: Category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: 'Sort by: created_at, price, rating, students'
+        in: query
+        name: sort_by
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: List courses
+      tags:
+      - Courses
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create course
+      tags:
+      - Courses
+  /courses/{courseId}/modules:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: List modules for a course
+      tags:
+      - Modules
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Module data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateModuleInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Module'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a module
+      tags:
+      - Modules
+  /courses/{courseId}/modules/{moduleId}:
+    delete:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a module
+      tags:
+      - Modules
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      - description: Module data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateModuleInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Module'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a module
+      tags:
+      - Modules
+  /courses/{courseId}/modules/reorder:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Module IDs in order
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            module_ids:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Reorder modules
+      tags:
+      - Modules
+  /courses/{id}:
+    delete:
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete course
+      tags:
+      - Courses
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update course
+      tags:
+      - Courses
+  /courses/{id}/archive:
+    patch:
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Archive course
+      tags:
+      - Courses
+  /courses/{id}/curriculum:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get course curriculum
+      tags:
+      - Courses
+  /courses/{id}/publish:
+    patch:
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Publish course
+      tags:
+      - Courses
+  /courses/{idOrSlug}:
+    get:
+      parameters:
+      - description: Course ID or slug
+        in: path
+        name: idOrSlug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Course'
+              type: object
+      summary: Get course
+      tags:
+      - Courses
+  /courses/categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+                  type: array
+              type: object
+      summary: List all categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a category (admin)
+      tags:
+      - Categories
+  /courses/categories/{id}:
+    delete:
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a category (admin)
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Category data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Category'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a category (admin)
+      tags:
+      - Categories
+  /courses/modules/{moduleId}/lessons:
+    get:
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: List lessons for a module
+      tags:
+      - Lessons
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      - description: Lesson data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.CreateLessonInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a lesson
+      tags:
+      - Lessons
+  /courses/modules/{moduleId}/lessons/{lessonId}:
+    delete:
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a lesson
+      tags:
+      - Lessons
+    get:
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get a lesson
+      tags:
+      - Lessons
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleId
+        required: true
+        type: string
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      - description: Lesson data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_course.UpdateLessonInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Lesson'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a lesson
+      tags:
+      - Lessons
+  /courses/my:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my courses (as instructor)
+      tags:
+      - Courses
+  /discussions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Discussion data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_discussion.CreateDiscussionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Discussion'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a discussion or reply
+      tags:
+      - Discussions
+  /discussions/{id}:
+    delete:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a discussion
+      tags:
+      - Discussions
+    get:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Discussion'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get discussion with replies
+      tags:
+      - Discussions
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_discussion.UpdateDiscussionInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Discussion'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a discussion
+      tags:
+      - Discussions
+  /discussions/{id}/pin:
+    delete:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unpin a discussion (instructor only)
+      tags:
+      - Discussions
+    post:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Pin a discussion (instructor only)
+      tags:
+      - Discussions
+  /discussions/{id}/replies:
+    get:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get replies for a discussion
+      tags:
+      - Discussions
+  /discussions/{id}/resolve:
+    delete:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unmark discussion as resolved
+      tags:
+      - Discussions
+    post:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark discussion as resolved
+      tags:
+      - Discussions
+  /discussions/{id}/upvote:
+    delete:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove upvote from a discussion
+      tags:
+      - Discussions
+    post:
+      parameters:
+      - description: Discussion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Upvote a discussion
+      tags:
+      - Discussions
+  /discussions/course/{courseId}:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get discussions for a course
+      tags:
+      - Discussions
+  /discussions/lesson/{lessonId}:
+    get:
+      parameters:
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get Q&A for a lesson
+      tags:
+      - Discussions
+  /enrollments:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: List enrollments
+      tags:
+      - Enrollments
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Enrollment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_enrollment.EnrollInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Enroll in a course
+      tags:
+      - Enrollments
+  /enrollments/{id}:
+    get:
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Enrollment'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get enrollment by ID
+      tags:
+      - Enrollments
+  /enrollments/{id}/cancel:
+    patch:
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Cancel enrollment
+      tags:
+      - Enrollments
+  /enrollments/{id}/lessons/{lessonId}/complete:
+    post:
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark lesson as complete
+      tags:
+      - Enrollments
+  /enrollments/{id}/lessons/{lessonId}/position:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      - description: Position
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_enrollment.UpdateVideoPositionInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update video playback position
+      tags:
+      - Enrollments
+  /enrollments/{id}/progress:
+    get:
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get enrollment progress
+      tags:
+      - Enrollments
+  /enrollments/my:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my enrollments
+      tags:
+      - Enrollments
+  /learning-paths:
+    get:
+      parameters:
+      - description: Category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Level
+        in: query
+        name: level
+        type: string
+      - description: Search
+        in: query
+        name: search
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: List learning paths
+      tags:
+      - Learning Paths
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Path data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.CreatePathInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LearningPath'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}:
+    delete:
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a learning path
+      tags:
+      - Learning Paths
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.UpdatePathInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LearningPath'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}/courses:
+    get:
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get courses in a learning path
+      tags:
+      - Learning Paths
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_learningpath.AddCourseInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Add a course to a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}/courses/{courseId}:
+    delete:
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Remove a course from a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}/courses/reorder:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course order
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ReorderInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Reorder courses in a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}/enroll:
+    post:
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Enroll in a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{id}/progress:
+    get:
+      parameters:
+      - description: Path ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LearningPathProgress'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get my progress in a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/{idOrSlug}:
+    get:
+      parameters:
+      - description: Path ID or slug
+        in: path
+        name: idOrSlug
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.LearningPath'
+              type: object
+      summary: Get a learning path
+      tags:
+      - Learning Paths
+  /learning-paths/category/{categoryId}:
+    get:
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get paths by category
+      tags:
+      - Learning Paths
+  /learning-paths/featured:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get featured learning paths
+      tags:
+      - Learning Paths
+  /learning-paths/my/enrollments:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my learning path enrollments
+      tags:
+      - Learning Paths
+  /messages:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Message data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_message.SendMessageInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Message'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Send a message
+      tags:
+      - Messages
+  /messages/{id}:
+    delete:
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a message
+      tags:
+      - Messages
+  /messages/{id}/read:
+    post:
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark a message as read
+      tags:
+      - Messages
+  /messages/conversations:
+    get:
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my conversations
+      tags:
+      - Messages
+  /messages/conversations/{id}:
+    get:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Conversation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get a conversation
+      tags:
+      - Messages
+  /messages/conversations/{id}/messages:
+    get:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get messages in a conversation
+      tags:
+      - Messages
+  /messages/conversations/{id}/read:
+    post:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark all messages in a conversation as read
+      tags:
+      - Messages
+  /messages/conversations/{userId}:
+    post:
+      parameters:
+      - description: User ID to message
+        in: path
+        name: userId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Conversation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Start a conversation with a user
+      tags:
+      - Messages
+  /messages/unread-count:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get total unread message count
+      tags:
+      - Messages
+  /notifications:
+    get:
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get notifications
+      tags:
+      - Notifications
+  /notifications/{id}:
+    delete:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete notification
+      tags:
+      - Notifications
+  /notifications/{id}/read:
+    post:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark notification as read
+      tags:
+      - Notifications
+  /notifications/read-all:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark all notifications as read
+      tags:
+      - Notifications
+  /notifications/unread-count:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    format: int64
+                    type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get unread notification count
+      tags:
+      - Notifications
+  /orders:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateOrderInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateOrderOutput'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create order from cart
+      tags:
+      - Orders
+  /orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Order'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get order by ID
+      tags:
+      - Orders
+  /orders/confirm:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payment Intent ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ConfirmPaymentInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Order'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Confirm payment
+      tags:
+      - Orders
+  /orders/coupons:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: List coupons (admin)
+      tags:
+      - Coupons
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Coupon data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_order.CreateCouponInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Coupon'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create coupon (admin)
+      tags:
+      - Coupons
+  /orders/coupons/{id}:
+    delete:
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete coupon (admin)
+      tags:
+      - Coupons
+  /orders/coupons/{id}/toggle:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Active status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ToggleCouponInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Toggle coupon active status (admin)
+      tags:
+      - Coupons
+  /orders/coupons/validate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Coupon data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ValidateCouponInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Validate coupon code
+      tags:
+      - Coupons
+  /orders/my:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my orders
+      tags:
+      - Orders
+  /orders/webhook:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Handle Stripe webhook
+      tags:
+      - Orders
+  /push/subscribe:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subscription data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_service_push.SubscriptionInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Subscribe to push notifications
+      tags:
+      - Push
+  /push/subscriptions:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my push subscriptions
+      tags:
+      - Push
+  /push/unsubscribe:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unsubscribe data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.UnsubscribeInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unsubscribe from push notifications
+      tags:
+      - Push
+  /push/unsubscribe-all:
+    delete:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unsubscribe all devices from push notifications
+      tags:
+      - Push
+  /push/vapid-key:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get VAPID public key for push subscription
+      tags:
+      - Push
+  /quizzes:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Quiz data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.CreateQuizInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create quiz
+      tags:
+      - Quizzes
+  /quizzes/{id}:
+    delete:
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete quiz
+      tags:
+      - Quizzes
+    get:
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get quiz by ID
+      tags:
+      - Quizzes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Quiz data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.UpdateQuizInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update quiz
+      tags:
+      - Quizzes
+  /quizzes/{id}/attempts:
+    post:
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizAttempt'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Start quiz attempt
+      tags:
+      - Quizzes
+  /quizzes/{id}/my-attempts:
+    get:
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my attempts for a quiz
+      tags:
+      - Quizzes
+  /quizzes/{id}/questions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Question data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.AddQuestionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizQuestion'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Add question to quiz
+      tags:
+      - Quizzes
+  /quizzes/attempts/{attemptId}:
+    get:
+      parameters:
+      - description: Attempt ID
+        in: path
+        name: attemptId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizAttempt'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get attempt by ID
+      tags:
+      - Quizzes
+  /quizzes/attempts/{attemptId}/submit:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Attempt ID
+        in: path
+        name: attemptId
+        required: true
+        type: string
+      - description: Answers
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_quiz.SubmitAnswerInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.QuizAttempt'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Submit quiz answers
+      tags:
+      - Quizzes
+  /quizzes/lesson/{lessonId}:
+    get:
+      parameters:
+      - description: Lesson ID
+        in: path
+        name: lessonId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.Quiz'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get quiz by lesson
+      tags:
+      - Quizzes
+  /reports/export:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Export settings
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ExportRequest'
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: Export report data (CSV)
+      tags:
+      - Reports
+  /reports/recently-viewed:
+    delete:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Clear recently viewed history
+      tags:
+      - Reports
+    get:
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.RecentlyViewed'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get recently viewed courses
+      tags:
+      - Reports
+  /reports/recently-viewed/{courseId}:
+    post:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Track a course view
+      tags:
+      - Reports
+  /reports/scheduled:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get my scheduled reports
+      tags:
+      - Reports
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Report data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a scheduled report
+      tags:
+      - Reports
+  /reports/scheduled/{id}:
+    delete:
+      parameters:
+      - description: Report ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a scheduled report
+      tags:
+      - Reports
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Report ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.ScheduledReport'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a scheduled report
+      tags:
+      - Reports
+  /reviews:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_review.CreateReviewInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a review
+      tags:
+      - Reviews
+  /reviews/{id}:
+    delete:
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete a review
+      tags:
+      - Reviews
+    get:
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+              type: object
+      summary: Get review by ID
+      tags:
+      - Reviews
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Review data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_review.UpdateReviewInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update a review
+      tags:
+      - Reviews
+  /reviews/{id}/feature:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Featured status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.FeatureReviewInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Feature/unfeature a review
+      tags:
+      - Reviews
+  /reviews/{id}/reply:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Reply
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_review.ReplyToReviewInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Reply to a review (instructor)
+      tags:
+      - Reviews
+  /reviews/{id}/vote:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.VoteReviewInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Vote on a review
+      tags:
+      - Reviews
+  /reviews/course/{courseId}:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get reviews for a course
+      tags:
+      - Reviews
+  /reviews/course/{courseId}/my:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.CourseReview'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get my review for a course
+      tags:
+      - Reviews
+  /reviews/course/{courseId}/summary:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_review.RatingSummary'
+              type: object
+      summary: Get rating summary for a course
+      tags:
+      - Reviews
+  /search:
+    get:
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      - description: Category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Level (beginner, intermediate, advanced)
+        in: query
+        name: level
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Minimum rating
+        in: query
+        name: min_rating
+        type: number
+      - description: Free courses only
+        in: query
+        name: is_free
+        type: boolean
+      - description: Sort by (relevance, rating, price, students, newest)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.SearchResult'
+              type: object
+      summary: Search courses
+      tags:
+      - Search
+  /search/facets:
+    get:
+      parameters:
+      - description: Search query to scope facets
+        in: query
+        name: q
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_search.SearchFacets'
+              type: object
+      summary: Get search facets for filtering
+      tags:
+      - Search
+  /search/related/{courseId}:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Limit (default 4)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get courses related to a specific course
+      tags:
+      - Search
+  /search/suggestions:
+    get:
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Limit (default 5)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+      summary: Get search suggestions (autocomplete)
+      tags:
+      - Search
+  /search/trending:
+    get:
+      parameters:
+      - description: Limit (default 10)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+      summary: Get trending search terms
+      tags:
+      - Search
+  /uploads/document:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Document file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Folder name
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Upload document
+      tags:
+      - Uploads
+  /uploads/image:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Image file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Folder name
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Upload image
+      tags:
+      - Uploads
+  /uploads/video:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Video file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Folder name
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Upload video
+      tags:
+      - Uploads
+  /users:
+    get:
+      parameters:
+      - description: Filter by role
+        in: query
+        name: role
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_user.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create user (admin)
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_domain.User'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - Users
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateRoleInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user role
+      tags:
+      - Users
+  /users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user status
+      tags:
+      - Users
+  /users/tutors:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: List tutors
+      tags:
+      - Users
+  /users/tutors/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      summary: Get tutor profile
+      tags:
+      - Users
+  /users/tutors/{id}/profile:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_usecase_user.UpdateTutorProfileInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update tutor profile
+      tags:
+      - Users
+  /wishlist:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get wishlist
+      tags:
+      - Wishlist
+  /wishlist/{courseId}:
+    delete:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Remove course from wishlist
+      tags:
+      - Wishlist
+    post:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Add course to wishlist
+      tags:
+      - Wishlist
+  /wishlist/{courseId}/check:
+    get:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Check if course is in wishlist
+      tags:
+      - Wishlist
+  /wishlist/{courseId}/move-to-cart:
+    post:
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_tutorflow_tutorflow-server_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Move course from wishlist to cart
+      tags:
+      - Wishlist
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and then your API key.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -149,8 +149,13 @@ type RefreshInput struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
+// RefreshOutput returned after token refresh
+type RefreshOutput struct {
+	Tokens *jwt.TokenPair `json:"tokens"`
+}
+
 // Refresh generates new access token from refresh token
-func (uc *UseCase) Refresh(ctx context.Context, input RefreshInput) (*jwt.TokenPair, error) {
+func (uc *UseCase) Refresh(ctx context.Context, input RefreshInput) (*RefreshOutput, error) {
 	// Validate refresh token
 	claims, err := uc.jwtManager.ValidateToken(input.RefreshToken)
 	if err != nil {
@@ -188,7 +193,7 @@ func (uc *UseCase) Refresh(ctx context.Context, input RefreshInput) (*jwt.TokenP
 		return nil, err
 	}
 
-	return tokens, nil
+	return &RefreshOutput{Tokens: tokens}, nil
 }
 
 // Logout revokes refresh token

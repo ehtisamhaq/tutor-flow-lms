@@ -3,11 +3,13 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-
+	"github.com/tutorflow/tutorflow-server/internal/domain"
 	"github.com/tutorflow/tutorflow-server/internal/middleware"
 	"github.com/tutorflow/tutorflow-server/internal/pkg/response"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/certificate"
 )
+
+var _ = domain.Certificate{}
 
 // CertificateHandler handles certificate HTTP requests
 type CertificateHandler struct {

@@ -61,8 +61,8 @@ type Course struct {
 	Rating           float64        `gorm:"type:decimal(3,2);default:0" json:"rating"`
 	TotalReviews     int            `gorm:"default:0" json:"total_reviews"`
 	IsFeatured       bool           `gorm:"default:false" json:"is_featured"`
-	Requirements     pq.StringArray `gorm:"type:text[]" json:"requirements,omitempty"`
-	WhatYouLearn     pq.StringArray `gorm:"type:text[]" json:"what_you_learn,omitempty"`
+	Requirements     pq.StringArray `gorm:"type:text[]" json:"requirements,omitempty" swaggertype:"array,string"`
+	WhatYouLearn     pq.StringArray `gorm:"type:text[]" json:"what_you_learn,omitempty" swaggertype:"array,string"`
 	Language         string         `gorm:"type:varchar(50);default:'English'" json:"language"`
 	PublishedAt      *time.Time     `json:"published_at,omitempty"`
 	CreatedAt        time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`

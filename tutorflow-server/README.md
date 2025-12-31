@@ -1,121 +1,122 @@
 # TutorFlow LMS - Server
 
-A professional Learning Management System built with Go, Echo framework, and PostgreSQL.
+A professional, high-performance Learning Management System built with Go, Echo framework, and PostgreSQL.
 
-## Features
+## 🚀 Features
 
-- **Multi-role authentication**: Admin, Manager, Tutor, Student
-- **Course management**: Create, publish, and manage courses
-- **Content security**: DRM-protected video content with HLS encryption
-- **E-commerce**: Shopping cart, Stripe payments, coupons
-- **Assessment**: Quizzes and assignments with auto-grading
-- **Learning paths**: Curated course sequences
-- **Reviews & ratings**: Course feedback system
-- **Notifications**: In-app and email notifications
+- **Multi-role Authentication**: Secure access for Admin, Manager, Tutor, and Student roles with JWT & Refresh Tokens.
+- **Course & Content Management**: Comprehensive system for creating courses, modules, and lessons with support for HLS encrypted video.
+- **Learning Paths**: Structured curriculum sequences enabling students to follow curated educational journeys.
+- **Assessment System**: Advanced quizzes and assignments with auto-grading, time limits, and feedback loops.
+- **E-commerce Engine**: Integrated shopping cart, wishlist, Stripe payment gateway, and dynamic coupon/discount system.
+- **Direct Messaging**: Real-time communication between students and instructors with file attachments.
+- **Discussion Forums**: Course-specific Q&A and discussion threads to foster community learning.
+- **Announcement System**: Course-wide updates with integrated Web Push and Email notifications.
+- **Automated Certificates**: Dynamic PDF certificate generation upon course completion.
+- **Advanced Search**: Full-text search across courses with filtering, facets, and autocomplete suggestions.
+- **Reports & Analytics**: Detailed sales reports, student progress tracking, and engagement metrics for admins and instructors.
 
-## Tech Stack
+## 🛠 Tech Stack
 
-- **Backend**: Go 1.22+ with Echo v4
+- **Backend**: Go 1.25.3 with [Echo v4](https://echo.labstack.com/)
 - **Database**: PostgreSQL 16
+- **Persistence**: [GORM v2](https://gorm.io/)
+- **Documentation**: [Swagger / OpenAPI 3.0](https://swagger.io/)
 - **Cache**: Redis 7
-- **ORM**: GORM v2
-- **Auth**: JWT with refresh tokens
+- **Authentication**: JWT with Refresh Tokens
 - **Payments**: Stripe
+- **Storage**: Cloudinary / Local Storage
+- **Logging**: Uber [Zap](https://github.com/uber-go/zap)
 
-## Getting Started
+## ⚡️ Getting Started
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.25.3+
 - Docker & Docker Compose
-- Make (optional)
+- Make (recommended)
 
-### Setup
+### Installation & Setup
 
-1. Clone the repository:
+1. **Clone the repository**:
 
    ```bash
+   git clone https://github.com/tutorflow/tutorflow-server.git
    cd tutorflow-server
    ```
 
-2. Copy config file:
+2. **Run Initial Setup**:
 
    ```bash
-   cp config/config.example.yaml config/config.yaml
+   make setup
    ```
 
-3. Start database services:
+   _This will create necessary directories and copy the default configuration._
+
+3. **Start Infrastructure**:
 
    ```bash
    make docker-up
-   # or
-   docker-compose up -d
    ```
 
-4. Install dependencies:
+   _Starts PostgreSQL and Redis in the background._
 
+4. **Run the Application**:
    ```bash
-   go mod download
+   make dev
    ```
+   _Runs the server with hot-reload enabled._
 
-5. Run the server:
-   ```bash
-   make run
-   # or
-   go run cmd/server/main.go
-   ```
+The API will be available at `http://localhost:8080`.
 
-The API will be available at `http://localhost:8080`
+## 📖 API Documentation
 
-### Development
+The API is fully documented using Swagger annotations.
 
-For hot-reload during development:
+- **Interactive UI**: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
+- **JSON Spec**: `http://localhost:8080/swagger/doc.json`
+
+To regenerate the documentation after making changes to handlers or models:
 
 ```bash
-make dev
+make swagger
 ```
 
-### API Endpoints
-
-| Endpoint                     | Description       |
-| ---------------------------- | ----------------- |
-| `GET /health`                | Health check      |
-| `POST /api/v1/auth/register` | Register new user |
-| `POST /api/v1/auth/login`    | Login             |
-| `POST /api/v1/auth/refresh`  | Refresh token     |
-| `GET /api/v1/auth/me`        | Get current user  |
-
-### Makefile Commands
-
-```bash
-make build        # Build the application
-make run          # Build and run
-make dev          # Run with hot reload
-make test         # Run tests
-make docker-up    # Start Docker containers
-make docker-down  # Stop Docker containers
-make swagger      # Generate Swagger docs
-make lint         # Lint the code
-```
-
-## Project Structure
+## 📂 Project Structure
 
 ```
 tutorflow-server/
-├── cmd/server/         # Application entrypoint
-├── internal/
-│   ├── domain/         # Business entities
-│   ├── usecase/        # Business logic
-│   ├── repository/     # Data access
-│   ├── handler/        # HTTP handlers
-│   ├── middleware/     # Custom middleware
-│   └── pkg/            # Shared utilities
-├── migrations/         # SQL migrations
-├── config/             # Configuration files
-├── docs/               # API documentation
-└── scripts/            # Utility scripts
+├── cmd/                # Entry points for the application
+│   └── server/         # Main server application
+├── internal/           # Private application and library code
+│   ├── domain/         # Business logic models (Entities)
+│   ├── usecase/        # Business logic rules (Services)
+│   ├── repository/     # Data access layer (Postgres/GORM)
+│   ├── handler/        # HTTP controllers (Echo Handlers)
+│   ├── middleware/     # Custom HTTP middleware
+│   ├── service/        # External service integrations (Email, Stripe, Storage)
+│   └── pkg/            # Reusable packages (JWT, Logger, Database)
+├── config/             # Configuration files and loaders
+├── docs/               # Generated Swagger documentation
+├── migrations/         # Database migration files
+└── uploads/            # Local storage for media assets
 ```
 
-## License
+## 🧪 Development
 
-MIT
+### Running Tests
+
+```bash
+make test          # Run all tests
+make test-coverage # Run tests and generate HTML coverage report
+```
+
+### Linting
+
+```bash
+make lint          # Run golangci-lint
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

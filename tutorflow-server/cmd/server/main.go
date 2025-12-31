@@ -10,7 +10,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/swaggo/echo-swagger"
 	"go.uber.org/zap"
+
+	_ "github.com/tutorflow/tutorflow-server/docs"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
 	"github.com/tutorflow/tutorflow-server/internal/handler"
@@ -43,6 +46,26 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/user"
 )
 
+// @title TutorFlow LMS API
+// @version 1.0
+// @description This is the backend API for TutorFlow Learning Management System.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.tutorflow.com/support
+// @contact.email support@tutorflow.com
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /api/v1
+// @query.collection.format multi
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and then your API key.
 func main() {
 	// Initialize logger
 	logger, _ := zap.NewProduction()
@@ -213,6 +236,9 @@ func main() {
 	pushHandler.RegisterRoutes(api, authMW)
 	learningPathHandler.RegisterRoutes(api, authMW, optionalAuthMW, adminMW)
 	reportHandler.RegisterRoutes(api, authMW, adminMW)
+
+	// Swagger route
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Background worker for scheduled reports
 	go func() {

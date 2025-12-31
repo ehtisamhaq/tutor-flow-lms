@@ -108,7 +108,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body auth.RefreshInput true "Refresh token"
-// @Success 200 {object} response.Response{data=jwt.TokenPair}
+// @Success 200 {object} response.Response{data=auth.RefreshOutput}
 // @Failure 401 {object} response.Response
 // @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c echo.Context) error {

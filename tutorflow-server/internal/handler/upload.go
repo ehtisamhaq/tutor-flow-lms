@@ -31,8 +31,8 @@ func (h *UploadHandler) RegisterRoutes(g *echo.Group, authMW echo.MiddlewareFunc
 // @Security BearerAuth
 // @Accept multipart/form-data
 // @Produce json
-// @Param file formance file true "Image file"
-// @Param folder formance string false "Folder name"
+// @Param file formData file true "Image file"
+// @Param folder formData string false "Folder name"
 // @Success 200 {object} response.Response{data=map[string]string}
 // @Router /uploads/image [post]
 func (h *UploadHandler) UploadImage(c echo.Context) error {
@@ -66,8 +66,8 @@ func (h *UploadHandler) UploadImage(c echo.Context) error {
 // @Security BearerAuth
 // @Accept multipart/form-data
 // @Produce json
-// @Param file formance file true "Video file"
-// @Param folder formance string false "Folder name"
+// @Param file formData file true "Video file"
+// @Param folder formData string false "Folder name"
 // @Success 200 {object} response.Response{data=map[string]string}
 // @Router /uploads/video [post]
 func (h *UploadHandler) UploadVideo(c echo.Context) error {
@@ -98,8 +98,8 @@ func (h *UploadHandler) UploadVideo(c echo.Context) error {
 // @Security BearerAuth
 // @Accept multipart/form-data
 // @Produce json
-// @Param file formance file true "Document file"
-// @Param folder formance string false "Folder name"
+// @Param file formData file true "Document file"
+// @Param folder formData string false "Folder name"
 // @Success 200 {object} response.Response{data=map[string]string}
 // @Router /uploads/document [post]
 func (h *UploadHandler) UploadDocument(c echo.Context) error {

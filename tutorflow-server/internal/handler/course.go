@@ -309,7 +309,13 @@ func (h *CourseHandler) MyCourses(c echo.Context) error {
 
 // --- Module Handlers ---
 
-// ListModules lists modules for a course
+// ListModules godoc
+// @Summary List modules for a course
+// @Tags Modules
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {object} response.Response
+// @Router /courses/{courseId}/modules [get]
 func (h *CourseHandler) ListModules(c echo.Context) error {
 	courseID, err := uuid.Parse(c.Param("courseId"))
 	if err != nil {
@@ -324,7 +330,16 @@ func (h *CourseHandler) ListModules(c echo.Context) error {
 	return response.Success(c, modules)
 }
 
-// CreateModule creates a module
+// CreateModule godoc
+// @Summary Create a module
+// @Tags Modules
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param request body course.CreateModuleInput true "Module data"
+// @Success 201 {object} response.Response{data=domain.Module}
+// @Router /courses/{courseId}/modules [post]
 func (h *CourseHandler) CreateModule(c echo.Context) error {
 	courseID, err := uuid.Parse(c.Param("courseId"))
 	if err != nil {
@@ -353,7 +368,17 @@ func (h *CourseHandler) CreateModule(c echo.Context) error {
 	return response.Created(c, module)
 }
 
-// UpdateModule updates a module
+// UpdateModule godoc
+// @Summary Update a module
+// @Tags Modules
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param moduleId path string true "Module ID"
+// @Param request body course.UpdateModuleInput true "Module data"
+// @Success 200 {object} response.Response{data=domain.Module}
+// @Router /courses/{courseId}/modules/{moduleId} [put]
 func (h *CourseHandler) UpdateModule(c echo.Context) error {
 	moduleID, err := uuid.Parse(c.Param("moduleId"))
 	if err != nil {
@@ -373,7 +398,14 @@ func (h *CourseHandler) UpdateModule(c echo.Context) error {
 	return response.Success(c, module)
 }
 
-// DeleteModule deletes a module
+// DeleteModule godoc
+// @Summary Delete a module
+// @Tags Modules
+// @Security BearerAuth
+// @Param courseId path string true "Course ID"
+// @Param moduleId path string true "Module ID"
+// @Success 204
+// @Router /courses/{courseId}/modules/{moduleId} [delete]
 func (h *CourseHandler) DeleteModule(c echo.Context) error {
 	moduleID, err := uuid.Parse(c.Param("moduleId"))
 	if err != nil {
@@ -387,7 +419,16 @@ func (h *CourseHandler) DeleteModule(c echo.Context) error {
 	return response.NoContent(c)
 }
 
-// ReorderModules reorders modules
+// ReorderModules godoc
+// @Summary Reorder modules
+// @Tags Modules
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param request body object{module_ids=[]string} true "Module IDs in order"
+// @Success 200 {object} response.Response
+// @Router /courses/{courseId}/modules/reorder [patch]
 func (h *CourseHandler) ReorderModules(c echo.Context) error {
 	courseID, err := uuid.Parse(c.Param("courseId"))
 	if err != nil {
@@ -410,7 +451,13 @@ func (h *CourseHandler) ReorderModules(c echo.Context) error {
 
 // --- Lesson Handlers ---
 
-// ListLessons lists lessons for a module
+// ListLessons godoc
+// @Summary List lessons for a module
+// @Tags Lessons
+// @Produce json
+// @Param moduleId path string true "Module ID"
+// @Success 200 {object} response.Response
+// @Router /courses/modules/{moduleId}/lessons [get]
 func (h *CourseHandler) ListLessons(c echo.Context) error {
 	moduleID, err := uuid.Parse(c.Param("moduleId"))
 	if err != nil {
@@ -425,7 +472,16 @@ func (h *CourseHandler) ListLessons(c echo.Context) error {
 	return response.Success(c, modules)
 }
 
-// CreateLesson creates a lesson
+// CreateLesson godoc
+// @Summary Create a lesson
+// @Tags Lessons
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param moduleId path string true "Module ID"
+// @Param request body course.CreateLessonInput true "Lesson data"
+// @Success 201 {object} response.Response{data=domain.Lesson}
+// @Router /courses/modules/{moduleId}/lessons [post]
 func (h *CourseHandler) CreateLesson(c echo.Context) error {
 	moduleID, err := uuid.Parse(c.Param("moduleId"))
 	if err != nil {
@@ -449,7 +505,15 @@ func (h *CourseHandler) CreateLesson(c echo.Context) error {
 	return response.Created(c, lesson)
 }
 
-// GetLesson gets a lesson
+// GetLesson godoc
+// @Summary Get a lesson
+// @Tags Lessons
+// @Security BearerAuth
+// @Produce json
+// @Param moduleId path string true "Module ID"
+// @Param lessonId path string true "Lesson ID"
+// @Success 200 {object} response.Response{data=domain.Lesson}
+// @Router /courses/modules/{moduleId}/lessons/{lessonId} [get]
 func (h *CourseHandler) GetLesson(c echo.Context) error {
 	lessonID, err := uuid.Parse(c.Param("lessonId"))
 	if err != nil {
@@ -464,7 +528,17 @@ func (h *CourseHandler) GetLesson(c echo.Context) error {
 	return response.Success(c, lesson)
 }
 
-// UpdateLesson updates a lesson
+// UpdateLesson godoc
+// @Summary Update a lesson
+// @Tags Lessons
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param moduleId path string true "Module ID"
+// @Param lessonId path string true "Lesson ID"
+// @Param request body course.UpdateLessonInput true "Lesson data"
+// @Success 200 {object} response.Response{data=domain.Lesson}
+// @Router /courses/modules/{moduleId}/lessons/{lessonId} [put]
 func (h *CourseHandler) UpdateLesson(c echo.Context) error {
 	lessonID, err := uuid.Parse(c.Param("lessonId"))
 	if err != nil {
@@ -484,7 +558,14 @@ func (h *CourseHandler) UpdateLesson(c echo.Context) error {
 	return response.Success(c, lesson)
 }
 
-// DeleteLesson deletes a lesson
+// DeleteLesson godoc
+// @Summary Delete a lesson
+// @Tags Lessons
+// @Security BearerAuth
+// @Param moduleId path string true "Module ID"
+// @Param lessonId path string true "Lesson ID"
+// @Success 204
+// @Router /courses/modules/{moduleId}/lessons/{lessonId} [delete]
 func (h *CourseHandler) DeleteLesson(c echo.Context) error {
 	lessonID, err := uuid.Parse(c.Param("lessonId"))
 	if err != nil {
@@ -500,7 +581,12 @@ func (h *CourseHandler) DeleteLesson(c echo.Context) error {
 
 // --- Category Handlers ---
 
-// ListCategories lists all categories
+// ListCategories godoc
+// @Summary List all categories
+// @Tags Categories
+// @Produce json
+// @Success 200 {object} response.Response{data=[]domain.Category}
+// @Router /courses/categories [get]
 func (h *CourseHandler) ListCategories(c echo.Context) error {
 	categories, err := h.courseUC.ListCategories(c.Request().Context())
 	if err != nil {
@@ -510,7 +596,15 @@ func (h *CourseHandler) ListCategories(c echo.Context) error {
 	return response.Success(c, categories)
 }
 
-// CreateCategory creates a category
+// CreateCategory godoc
+// @Summary Create a category (admin)
+// @Tags Categories
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body course.CreateCategoryInput true "Category data"
+// @Success 201 {object} response.Response{data=domain.Category}
+// @Router /courses/categories [post]
 func (h *CourseHandler) CreateCategory(c echo.Context) error {
 	var input course.CreateCategoryInput
 	if err := c.Bind(&input); err != nil {
@@ -529,7 +623,16 @@ func (h *CourseHandler) CreateCategory(c echo.Context) error {
 	return response.Created(c, category)
 }
 
-// UpdateCategory updates a category
+// UpdateCategory godoc
+// @Summary Update a category (admin)
+// @Tags Categories
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Category ID"
+// @Param request body course.CreateCategoryInput true "Category data"
+// @Success 200 {object} response.Response{data=domain.Category}
+// @Router /courses/categories/{id} [put]
 func (h *CourseHandler) UpdateCategory(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -549,7 +652,13 @@ func (h *CourseHandler) UpdateCategory(c echo.Context) error {
 	return response.Success(c, category)
 }
 
-// DeleteCategory deletes a category
+// DeleteCategory godoc
+// @Summary Delete a category (admin)
+// @Tags Categories
+// @Security BearerAuth
+// @Param id path string true "Category ID"
+// @Success 204
+// @Router /courses/categories/{id} [delete]
 func (h *CourseHandler) DeleteCategory(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

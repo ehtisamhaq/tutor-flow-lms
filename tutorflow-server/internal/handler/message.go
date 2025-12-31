@@ -6,11 +6,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/tutorflow/tutorflow-server/internal/domain"
 	"github.com/tutorflow/tutorflow-server/internal/middleware"
 	"github.com/tutorflow/tutorflow-server/internal/pkg/response"
 	"github.com/tutorflow/tutorflow-server/internal/pkg/validator"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/message"
 )
+
+var _ = domain.Conversation{}
+var _ = domain.Message{}
 
 // MessageHandler handles messaging HTTP requests
 type MessageHandler struct {

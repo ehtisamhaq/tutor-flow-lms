@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
@@ -21,7 +21,7 @@ type Claims struct {
 	UserID uuid.UUID       `json:"user_id"`
 	Email  string          `json:"email"`
 	Role   domain.UserRole `json:"role"`
-	jwt.RegisteredClaims
+	jwtlib.RegisteredClaims
 }
 
 // Manager handles JWT operations
@@ -48,15 +48,15 @@ func (m *Manager) GenerateAccessToken(user *domain.User) (string, error) {
 		UserID: user.ID,
 		Email:  user.Email,
 		Role:   user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.accessExpiresIn)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		RegisteredClaims: jwtlib.RegisteredClaims{
+			ExpiresAt: jwtlib.NewNumericDate(time.Now().Add(m.accessExpiresIn)),
+			IssuedAt:  jwtlib.NewNumericDate(time.Now()),
 			Issuer:    m.issuer,
 			Subject:   user.ID.String(),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
 	return token.SignedString(m.secret)
 }
 
@@ -68,15 +68,15 @@ func (m *Manager) GenerateRefreshToken(user *domain.User) (string, time.Time, er
 		UserID: user.ID,
 		Email:  user.Email,
 		Role:   user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		RegisteredClaims: jwtlib.RegisteredClaims{
+			ExpiresAt: jwtlib.NewNumericDate(expiresAt),
+			IssuedAt:  jwtlib.NewNumericDate(time.Now()),
 			Issuer:    m.issuer,
 			Subject:   user.ID.String(),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(m.secret)
 	if err != nil {
 		return "", time.Time{}, err
@@ -87,15 +87,15 @@ func (m *Manager) GenerateRefreshToken(user *domain.User) (string, time.Time, er
 
 // ValidateToken validates a JWT token and returns claims
 func (m *Manager) ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	token, err := jwtlib.ParseWithClaims(tokenString, &Claims{}, func(token *jwtlib.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwtlib.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
 		return m.secret, nil
 	})
 
 	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
+		if errors.Is(err, jwtlib.ErrTokenExpired) {
 			return nil, ErrExpiredToken
 		}
 		return nil, ErrInvalidToken
