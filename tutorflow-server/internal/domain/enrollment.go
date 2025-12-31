@@ -29,13 +29,12 @@ type Enrollment struct {
 	ExpiresAt       *time.Time       `json:"expires_at,omitempty"`
 	ProgressPercent float64          `gorm:"type:decimal(5,2);default:0" json:"progress_percent"`
 	LastAccessedAt  *time.Time       `json:"last_accessed_at,omitempty"`
-	CertificateID   *uuid.UUID       `gorm:"type:uuid" json:"certificate_id,omitempty"`
 	OrderID         *uuid.UUID       `gorm:"type:uuid" json:"order_id,omitempty"` // Link to purchase
 
 	// Relationships
 	User        *User            `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Course      *Course          `gorm:"foreignKey:CourseID" json:"course,omitempty"`
-	Certificate *Certificate     `gorm:"foreignKey:CertificateID" json:"certificate,omitempty"`
+	Certificate *Certificate     `gorm:"foreignKey:EnrollmentID" json:"certificate,omitempty"`
 	Progress    []LessonProgress `gorm:"foreignKey:EnrollmentID" json:"progress,omitempty"`
 }
 

@@ -50,19 +50,18 @@ type LearningPathCourse struct {
 
 // LearningPathEnrollment tracks user enrollment in a learning path
 type LearningPathEnrollment struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PathID        uuid.UUID  `gorm:"type:uuid;index;not null" json:"path_id"`
-	UserID        uuid.UUID  `gorm:"type:uuid;index;not null" json:"user_id"`
-	Status        string     `gorm:"type:varchar(50);default:'active'" json:"status"` // active, completed, paused
-	Progress      float64    `gorm:"default:0" json:"progress"`                       // 0-100%
-	EnrolledAt    time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"enrolled_at"`
-	CompletedAt   *time.Time `json:"completed_at,omitempty"`
-	CertificateID *uuid.UUID `gorm:"type:uuid" json:"certificate_id,omitempty"`
+	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	PathID      uuid.UUID  `gorm:"type:uuid;index;not null" json:"path_id"`
+	UserID      uuid.UUID  `gorm:"type:uuid;index;not null" json:"user_id"`
+	Status      string     `gorm:"type:varchar(50);default:'active'" json:"status"` // active, completed, paused
+	Progress    float64    `gorm:"default:0" json:"progress"`                       // 0-100%
+	EnrolledAt  time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"enrolled_at"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
 
 	// Relationships
 	Path        *LearningPath `gorm:"foreignKey:PathID" json:"path,omitempty"`
 	User        *User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Certificate *Certificate  `gorm:"foreignKey:CertificateID" json:"certificate,omitempty"`
+	Certificate *Certificate  `gorm:"foreignKey:ID" json:"certificate,omitempty"` // Assuming Certificate.ID matches or another way
 }
 
 // LearningPathEnrollmentStatus constants

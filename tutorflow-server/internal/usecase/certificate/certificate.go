@@ -114,12 +114,6 @@ func (uc *UseCase) IssueCertificate(ctx context.Context, enrollmentID uuid.UUID)
 		return nil, err
 	}
 
-	// Update enrollment with certificate ID
-	enrollment.CertificateID = &cert.ID
-	if err := uc.enrollmentRepo.Update(ctx, enrollment); err != nil {
-		// Log error but don't fail
-	}
-
 	// Return with full data
 	return uc.certRepo.GetByID(ctx, cert.ID)
 }
