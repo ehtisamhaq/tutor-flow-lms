@@ -50,7 +50,7 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return api(originalRequest);
         }
-      } catch (refreshError) {
+      } catch {
         // Clear tokens and redirect to login
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
