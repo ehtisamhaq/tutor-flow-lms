@@ -214,3 +214,13 @@ type Payout struct {
 
 	Instructor *User `gorm:"foreignKey:InstructorID" json:"-"`
 }
+
+// OrderRepository interface
+type OrderRepository interface {
+	Create(order *Order) error
+	GetByID(id uuid.UUID) (*Order, error)
+	GetByUserID(userID uuid.UUID, page, limit int) ([]Order, int64, error)
+	GetByOrderNumber(orderNumber string) (*Order, error)
+	Update(order *Order) error
+	GetAll(status *OrderStatus, page, limit int) ([]Order, int64, error)
+}

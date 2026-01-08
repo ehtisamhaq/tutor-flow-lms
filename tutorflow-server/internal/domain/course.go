@@ -116,3 +116,15 @@ type Module struct {
 	Course  *Course  `gorm:"foreignKey:CourseID" json:"course,omitempty"`
 	Lessons []Lesson `gorm:"foreignKey:ModuleID" json:"lessons,omitempty"`
 }
+
+// CourseRepository interface
+type CourseRepository interface {
+	Create(course *Course) error
+	GetByID(id uuid.UUID) (*Course, error)
+	GetBySlug(slug string) (*Course, error)
+	GetAll(page, limit int) ([]Course, int64, error)
+	GetByInstructorID(instructorID uuid.UUID, page, limit int) ([]Course, int64, error)
+	Update(course *Course) error
+	Delete(id uuid.UUID) error
+	Search(query string, page, limit int) ([]Course, int64, error)
+}

@@ -72,3 +72,16 @@ type LessonProgress struct {
 	Enrollment *Enrollment `gorm:"foreignKey:EnrollmentID" json:"-"`
 	Lesson     *Lesson     `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
 }
+
+// EnrollmentRepository interface
+type EnrollmentRepository interface {
+	Create(enrollment *Enrollment) error
+	GetByID(id uuid.UUID) (*Enrollment, error)
+	GetByUserAndCourse(userID, courseID uuid.UUID) (*Enrollment, error)
+	GetByUserID(userID uuid.UUID, page, limit int) ([]Enrollment, int64, error)
+	GetByCourseID(courseID uuid.UUID, page, limit int) ([]Enrollment, int64, error)
+	Update(enrollment *Enrollment) error
+	Delete(id uuid.UUID) error
+	IsEnrolled(userID, courseID uuid.UUID) (bool, error)
+	UpdateProgress(enrollmentID uuid.UUID, percent float64) error
+}

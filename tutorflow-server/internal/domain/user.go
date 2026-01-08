@@ -147,3 +147,15 @@ func (UserDevice) TableName() string {
 func init() {
 	// Composite unique constraint
 }
+
+// UserRepository interface
+type UserRepository interface {
+	Create(user *User) error
+	GetByID(id uuid.UUID) (*User, error)
+	GetByEmail(email string) (*User, error)
+	GetAll(page, limit int) ([]User, int64, error)
+	Update(user *User) error
+	Delete(id uuid.UUID) error
+	UpdatePassword(id uuid.UUID, passwordHash string) error
+	VerifyEmail(id uuid.UUID) error
+}

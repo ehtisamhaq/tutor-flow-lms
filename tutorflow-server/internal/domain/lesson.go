@@ -141,3 +141,13 @@ type ResourceInfo struct {
 	Description string         `json:"description,omitempty"`
 	Files       pq.StringArray `json:"files"`
 }
+
+// LessonRepository interface
+type LessonRepository interface {
+	Create(lesson *Lesson) error
+	GetByID(id uuid.UUID) (*Lesson, error)
+	GetByModuleID(moduleID uuid.UUID) ([]Lesson, error)
+	Update(lesson *Lesson) error
+	Delete(id uuid.UUID) error
+	Reorder(moduleID uuid.UUID, lessonIDs []uuid.UUID) error
+}
