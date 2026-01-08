@@ -143,7 +143,7 @@ func (h *ReviewHandler) CreateReview(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	reviewObj, err := h.reviewUC.CreateReview(c.Request().Context(), claims.UserID, input)
@@ -265,7 +265,7 @@ func (h *ReviewHandler) ReplyToReview(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	reviewObj, err := h.reviewUC.ReplyToReview(c.Request().Context(), id, claims.UserID, input.Reply)

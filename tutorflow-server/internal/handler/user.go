@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
@@ -61,7 +59,7 @@ func (h *UserHandler) List(c echo.Context) error {
 
 	users, total, err := h.userUC.List(c.Request().Context(), input)
 	if err != nil {
-		return response.InternalError(c, "Failed to list users")
+		return err
 	}
 
 	return response.Paginated(c, users, input.Page, input.Limit, total)
@@ -84,12 +82,12 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 	// Check if user can access this profile
 	claims, _ := middleware.GetClaims(c)
 	if claims.UserID != id && claims.Role != domain.RoleAdmin && claims.Role != domain.RoleManager {
-		return response.Forbidden(c, "")
+		return domain.ErrForbidden
 	}
 
 	u, err := h.userUC.GetByID(c.Request().Context(), id)
 	if err != nil {
-		return response.NotFound(c, "User not found")
+		return err
 	}
 
 	return response.Success(c, u)
@@ -111,15 +109,12 @@ func (h *UserHandler) Create(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	u, err := h.userUC.CreateUser(c.Request().Context(), input)
 	if err != nil {
-		if err == domain.ErrUserAlreadyExists {
-			return response.ErrorWithCode(c, http.StatusConflict, "USER_EXISTS", "User with this email already exists")
-		}
-		return response.InternalError(c, "Failed to create user")
+		return err
 	}
 
 	return response.Created(c, u)
@@ -144,7 +139,7 @@ func (h *UserHandler) Update(c echo.Context) error {
 	// Check authorization
 	claims, _ := middleware.GetClaims(c)
 	if claims.UserID != id && claims.Role != domain.RoleAdmin {
-		return response.Forbidden(c, "")
+		return domain.ErrForbidden
 	}
 
 	var input user.UpdateInput
@@ -153,15 +148,12 @@ func (h *UserHandler) Update(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	u, err := h.userUC.Update(c.Request().Context(), id, input)
 	if err != nil {
-		if err == domain.ErrUserNotFound {
-			return response.NotFound(c, "User not found")
-		}
-		return response.InternalError(c, "Failed to update user")
+		return err
 	}
 
 	return response.Success(c, u)
@@ -181,7 +173,7 @@ func (h *UserHandler) Delete(c echo.Context) error {
 	}
 
 	if err := h.userUC.Delete(c.Request().Context(), id); err != nil {
-		return response.InternalError(c, "Failed to delete user")
+		return err
 	}
 
 	return response.NoContent(c)
@@ -209,11 +201,11 @@ func (h *UserHandler) UpdateStatus(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	if err := h.userUC.UpdateStatus(c.Request().Context(), id, input); err != nil {
-		return response.InternalError(c, "Failed to update status")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Status updated successfully", nil)
@@ -241,11 +233,11 @@ func (h *UserHandler) UpdateRole(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	if err := h.userUC.UpdateRole(c.Request().Context(), id, input); err != nil {
-		return response.InternalError(c, "Failed to update role")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Role updated successfully", nil)
@@ -268,7 +260,7 @@ func (h *UserHandler) ListTutors(c echo.Context) error {
 		Limit:  50,
 	})
 	if err != nil {
-		return response.InternalError(c, "Failed to list tutors")
+		return err
 	}
 
 	return response.Paginated(c, users, 1, 50, total)
@@ -289,7 +281,7 @@ func (h *UserHandler) GetTutor(c echo.Context) error {
 
 	profile, err := h.userUC.GetTutorProfile(c.Request().Context(), id)
 	if err != nil {
-		return response.NotFound(c, "Tutor not found")
+		return err
 	}
 
 	return response.Success(c, profile)
@@ -314,7 +306,7 @@ func (h *UserHandler) UpdateTutorProfile(c echo.Context) error {
 	// Check authorization - only self or admin
 	claims, _ := middleware.GetClaims(c)
 	if claims.UserID != id && claims.Role != domain.RoleAdmin {
-		return response.Forbidden(c, "")
+		return domain.ErrForbidden
 	}
 
 	var input user.UpdateTutorProfileInput
@@ -323,12 +315,12 @@ func (h *UserHandler) UpdateTutorProfile(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	profile, err := h.userUC.UpdateTutorProfile(c.Request().Context(), id, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to update profile")
+		return err
 	}
 
 	return response.Success(c, profile)

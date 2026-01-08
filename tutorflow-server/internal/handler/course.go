@@ -82,7 +82,7 @@ func (h *CourseHandler) List(c echo.Context) error {
 
 	courses, total, err := h.courseUC.List(c.Request().Context(), input, true)
 	if err != nil {
-		return response.InternalError(c, "Failed to list courses")
+		return err
 	}
 
 	return response.Paginated(c, courses, input.Page, input.Limit, total)
@@ -109,14 +109,14 @@ func (h *CourseHandler) Get(c echo.Context) error {
 	}
 
 	if err != nil {
-		return response.NotFound(c, "Course not found")
+		return err
 	}
 
 	// Check if unpublished course can be viewed
 	if crs.Status != domain.CourseStatusPublished {
 		claims, ok := middleware.GetClaims(c)
 		if !ok || (crs.InstructorID != claims.UserID && claims.Role != domain.RoleAdmin) {
-			return response.NotFound(c, "Course not found")
+			return domain.ErrCourseNotFound
 		}
 	}
 
@@ -138,7 +138,7 @@ func (h *CourseHandler) GetCurriculum(c echo.Context) error {
 
 	modules, err := h.courseUC.GetCurriculum(c.Request().Context(), id)
 	if err != nil {
-		return response.InternalError(c, "Failed to get curriculum")
+		return err
 	}
 
 	return response.Success(c, modules)
@@ -162,12 +162,12 @@ func (h *CourseHandler) Create(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	crs, err := h.courseUC.Create(c.Request().Context(), claims.UserID, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to create course")
+		return err
 	}
 
 	return response.Created(c, crs)
@@ -200,12 +200,12 @@ func (h *CourseHandler) Update(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	crs, err := h.courseUC.Update(c.Request().Context(), id, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to update course")
+		return err
 	}
 
 	return response.Success(c, crs)
@@ -230,7 +230,7 @@ func (h *CourseHandler) Delete(c echo.Context) error {
 	}
 
 	if err := h.courseUC.Delete(c.Request().Context(), id); err != nil {
-		return response.InternalError(c, "Failed to delete course")
+		return err
 	}
 
 	return response.NoContent(c)
@@ -255,10 +255,7 @@ func (h *CourseHandler) Publish(c echo.Context) error {
 	}
 
 	if err := h.courseUC.Publish(c.Request().Context(), id); err != nil {
-		if err == domain.ErrContentLocked {
-			return response.BadRequest(c, "Course must have at least one module to publish")
-		}
-		return response.InternalError(c, "Failed to publish course")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Course published successfully", nil)
@@ -283,7 +280,7 @@ func (h *CourseHandler) Archive(c echo.Context) error {
 	}
 
 	if err := h.courseUC.Archive(c.Request().Context(), id); err != nil {
-		return response.InternalError(c, "Failed to archive course")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Course archived successfully", nil)
@@ -301,7 +298,7 @@ func (h *CourseHandler) MyCourses(c echo.Context) error {
 
 	courses, total, err := h.courseUC.GetByInstructor(c.Request().Context(), claims.UserID, 1, 50)
 	if err != nil {
-		return response.InternalError(c, "Failed to get courses")
+		return err
 	}
 
 	return response.Paginated(c, courses, 1, 50, total)
@@ -357,12 +354,12 @@ func (h *CourseHandler) CreateModule(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	module, err := h.courseUC.CreateModule(c.Request().Context(), courseID, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to create module")
+		return err
 	}
 
 	return response.Created(c, module)
@@ -392,7 +389,7 @@ func (h *CourseHandler) UpdateModule(c echo.Context) error {
 
 	module, err := h.courseUC.UpdateModule(c.Request().Context(), moduleID, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to update module")
+		return err
 	}
 
 	return response.Success(c, module)
@@ -413,7 +410,7 @@ func (h *CourseHandler) DeleteModule(c echo.Context) error {
 	}
 
 	if err := h.courseUC.DeleteModule(c.Request().Context(), moduleID); err != nil {
-		return response.InternalError(c, "Failed to delete module")
+		return err
 	}
 
 	return response.NoContent(c)
@@ -443,7 +440,7 @@ func (h *CourseHandler) ReorderModules(c echo.Context) error {
 	}
 
 	if err := h.courseUC.ReorderModules(c.Request().Context(), courseID, input.ModuleIDs); err != nil {
-		return response.InternalError(c, "Failed to reorder modules")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Modules reordered successfully", nil)
@@ -466,7 +463,7 @@ func (h *CourseHandler) ListLessons(c echo.Context) error {
 
 	modules, err := h.courseUC.GetCurriculum(c.Request().Context(), moduleID)
 	if err != nil {
-		return response.InternalError(c, "Failed to list lessons")
+		return err
 	}
 
 	return response.Success(c, modules)
@@ -494,12 +491,12 @@ func (h *CourseHandler) CreateLesson(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	lesson, err := h.courseUC.CreateLesson(c.Request().Context(), moduleID, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to create lesson")
+		return err
 	}
 
 	return response.Created(c, lesson)
@@ -522,7 +519,7 @@ func (h *CourseHandler) GetLesson(c echo.Context) error {
 
 	lesson, err := h.courseUC.GetLesson(c.Request().Context(), lessonID)
 	if err != nil {
-		return response.NotFound(c, "Lesson not found")
+		return err
 	}
 
 	return response.Success(c, lesson)
@@ -552,7 +549,7 @@ func (h *CourseHandler) UpdateLesson(c echo.Context) error {
 
 	lesson, err := h.courseUC.UpdateLesson(c.Request().Context(), lessonID, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to update lesson")
+		return err
 	}
 
 	return response.Success(c, lesson)
@@ -573,7 +570,7 @@ func (h *CourseHandler) DeleteLesson(c echo.Context) error {
 	}
 
 	if err := h.courseUC.DeleteLesson(c.Request().Context(), lessonID); err != nil {
-		return response.InternalError(c, "Failed to delete lesson")
+		return err
 	}
 
 	return response.NoContent(c)
@@ -590,7 +587,7 @@ func (h *CourseHandler) DeleteLesson(c echo.Context) error {
 func (h *CourseHandler) ListCategories(c echo.Context) error {
 	categories, err := h.courseUC.ListCategories(c.Request().Context())
 	if err != nil {
-		return response.InternalError(c, "Failed to list categories")
+		return err
 	}
 
 	return response.Success(c, categories)
@@ -612,12 +609,12 @@ func (h *CourseHandler) CreateCategory(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	category, err := h.courseUC.CreateCategory(c.Request().Context(), input)
 	if err != nil {
-		return response.InternalError(c, "Failed to create category")
+		return err
 	}
 
 	return response.Created(c, category)
@@ -646,7 +643,7 @@ func (h *CourseHandler) UpdateCategory(c echo.Context) error {
 
 	category, err := h.courseUC.UpdateCategory(c.Request().Context(), id, input)
 	if err != nil {
-		return response.InternalError(c, "Failed to update category")
+		return err
 	}
 
 	return response.Success(c, category)
@@ -666,7 +663,7 @@ func (h *CourseHandler) DeleteCategory(c echo.Context) error {
 	}
 
 	if err := h.courseUC.DeleteCategory(c.Request().Context(), id); err != nil {
-		return response.InternalError(c, "Failed to delete category")
+		return err
 	}
 
 	return response.NoContent(c)
@@ -679,10 +676,7 @@ func (h *CourseHandler) checkOwnership(c echo.Context, courseID, userID uuid.UUI
 	}
 
 	if err := h.courseUC.ValidateOwnership(c.Request().Context(), courseID, userID); err != nil {
-		if err == domain.ErrNotCourseOwner {
-			return response.Forbidden(c, "You don't own this course")
-		}
-		return response.NotFound(c, "Course not found")
+		return err
 	}
 
 	return nil

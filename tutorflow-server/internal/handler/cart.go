@@ -91,7 +91,7 @@ func (h *CartHandler) AddToCart(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	updatedCart, err := h.cartUC.AddToCart(c.Request().Context(), userID, sessionID, input)

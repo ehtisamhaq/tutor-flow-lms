@@ -143,7 +143,7 @@ func (h *OrderHandler) ConfirmPayment(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	orderObj, err := h.orderUC.ConfirmPayment(c.Request().Context(), input.PaymentIntentID)
@@ -216,7 +216,7 @@ func (h *OrderHandler) ValidateCoupon(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	coupon, discount, err := h.orderUC.ValidateCoupon(c.Request().Context(), input.Code, input.Subtotal)
@@ -265,7 +265,7 @@ func (h *OrderHandler) CreateCoupon(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	coupon, err := h.orderUC.CreateCoupon(c.Request().Context(), input, claims.UserID)

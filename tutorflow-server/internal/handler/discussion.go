@@ -144,7 +144,7 @@ func (h *DiscussionHandler) CreateDiscussion(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	disc, err := h.discussionUC.CreateDiscussion(c.Request().Context(), claims.UserID, input)

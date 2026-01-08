@@ -127,7 +127,7 @@ func (h *QuizHandler) CreateQuiz(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	quizObj, err := h.quizUC.CreateQuiz(c.Request().Context(), input)
@@ -211,7 +211,7 @@ func (h *QuizHandler) AddQuestion(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	question, err := h.quizUC.AddQuestion(c.Request().Context(), quizID, input)
@@ -414,7 +414,7 @@ func (h *QuizHandler) CreateAssignment(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	assignment, err := h.quizUC.CreateAssignment(c.Request().Context(), input)

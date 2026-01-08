@@ -149,7 +149,7 @@ func (h *AnnouncementHandler) CreateAnnouncement(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	ann, err := h.announcementUC.CreateAnnouncement(c.Request().Context(), claims.UserID, isAdmin, input)

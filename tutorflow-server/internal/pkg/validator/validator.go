@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-
-	"github.com/tutorflow/tutorflow-server/internal/pkg/response"
+	"github.com/tutorflow/tutorflow-server/internal/domain"
 )
 
 var (
@@ -42,13 +41,13 @@ func ValidateVar(field interface{}, tag string) error {
 	return validate.Var(field, tag)
 }
 
-// FormatValidationErrors converts validator errors to response format
-func FormatValidationErrors(err error) []response.ValidationError {
-	var errors []response.ValidationError
+// FormatValidationErrors converts validator errors to domain format
+func FormatValidationErrors(err error) domain.ValidationErrors {
+	var errors domain.ValidationErrors
 
 	if validationErrs, ok := err.(validator.ValidationErrors); ok {
 		for _, e := range validationErrs {
-			errors = append(errors, response.ValidationError{
+			errors = append(errors, domain.ValidationError{
 				Field:   e.Field(),
 				Message: getErrorMessage(e),
 			})

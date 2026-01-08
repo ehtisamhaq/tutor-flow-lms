@@ -171,7 +171,7 @@ func (h *MessageHandler) SendMessage(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	msg, err := h.messageUC.SendMessage(c.Request().Context(), claims.UserID, input)

@@ -206,7 +206,7 @@ func (h *LearningPathHandler) CreatePath(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	path, err := h.pathUC.CreatePath(c.Request().Context(), claims.UserID, isAdmin, input)

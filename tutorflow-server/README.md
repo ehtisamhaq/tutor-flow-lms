@@ -102,6 +102,10 @@ tutorflow-server/
 └── uploads/            # Local storage for media assets
 ```
 
+## 🔃 Dependency Flow
+
+Handler (API) → Usecase (Logic) → Domain / Repository (Data)
+
 ## 🧪 Development
 
 ### Running Tests

@@ -93,7 +93,7 @@ func (h *EnrollmentHandler) Enroll(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	enroll, err := h.enrollmentUC.Enroll(c.Request().Context(), claims.UserID, input)

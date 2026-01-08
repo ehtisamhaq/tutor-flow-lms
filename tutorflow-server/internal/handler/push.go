@@ -56,7 +56,7 @@ func (h *PushHandler) Subscribe(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	sub, err := h.pushSvc.Subscribe(c.Request().Context(), claims.UserID, input)

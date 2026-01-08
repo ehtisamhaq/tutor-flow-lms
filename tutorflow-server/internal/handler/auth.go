@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
@@ -49,17 +47,12 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	output, err := h.authUC.Register(c.Request().Context(), input)
 	if err != nil {
-		switch err {
-		case domain.ErrUserAlreadyExists:
-			return response.ErrorWithCode(c, http.StatusConflict, "USER_EXISTS", "User with this email already exists")
-		default:
-			return response.InternalError(c, "Failed to register user")
-		}
+		return err
 	}
 
 	return response.Created(c, output)
@@ -82,21 +75,12 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	output, err := h.authUC.Login(c.Request().Context(), input)
 	if err != nil {
-		switch err {
-		case domain.ErrInvalidCredentials:
-			return response.Unauthorized(c, "Invalid email or password")
-		case domain.ErrUserSuspended:
-			return response.ErrorWithCode(c, http.StatusForbidden, "USER_SUSPENDED", "Your account has been suspended")
-		case domain.ErrUserInactive:
-			return response.ErrorWithCode(c, http.StatusForbidden, "USER_INACTIVE", "Your account is inactive")
-		default:
-			return response.InternalError(c, "Failed to login")
-		}
+		return err
 	}
 
 	return response.Success(c, output)
@@ -118,12 +102,12 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	tokens, err := h.authUC.Refresh(c.Request().Context(), input)
 	if err != nil {
-		return response.Unauthorized(c, "Invalid or expired refresh token")
+		return err
 	}
 
 	return response.Success(c, tokens)
@@ -160,12 +144,12 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 func (h *AuthHandler) Me(c echo.Context) error {
 	claims, ok := middleware.GetClaims(c)
 	if !ok {
-		return response.Unauthorized(c, "")
+		return domain.ErrUnauthorized
 	}
 
 	user, err := h.authUC.GetCurrentUser(c.Request().Context(), claims.UserID)
 	if err != nil {
-		return response.NotFound(c, "User not found")
+		return err
 	}
 
 	return response.Success(c, user)
@@ -185,7 +169,7 @@ func (h *AuthHandler) Me(c echo.Context) error {
 func (h *AuthHandler) ChangePassword(c echo.Context) error {
 	claims, ok := middleware.GetClaims(c)
 	if !ok {
-		return response.Unauthorized(c, "")
+		return domain.ErrUnauthorized
 	}
 
 	var input auth.ChangePasswordInput
@@ -194,15 +178,12 @@ func (h *AuthHandler) ChangePassword(c echo.Context) error {
 	}
 
 	if err := validator.Validate(input); err != nil {
-		return response.ValidationErrors(c, validator.FormatValidationErrors(err))
+		return validator.FormatValidationErrors(err)
 	}
 
 	err := h.authUC.ChangePassword(c.Request().Context(), claims.UserID, input)
 	if err != nil {
-		if err == domain.ErrInvalidCredentials {
-			return response.BadRequest(c, "Current password is incorrect")
-		}
-		return response.InternalError(c, "Failed to change password")
+		return err
 	}
 
 	return response.SuccessWithMessage(c, "Password changed successfully", nil)
