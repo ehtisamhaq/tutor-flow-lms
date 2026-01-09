@@ -41,7 +41,11 @@ export function LoginForm() {
       const { user, tokens } = response.data.data;
       login(user, tokens.access_token, tokens.refresh_token);
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error: unknown) {
       const err = error as {
         response?: { data?: { error?: { message?: string } } };

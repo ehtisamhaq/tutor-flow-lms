@@ -15,7 +15,7 @@ type AdminHandler struct {
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(adminUC *admin.UseCase) *AdminHandler {
+func NewAdminDashboardHandler(adminUC *admin.UseCase) *AdminHandler {
 	return &AdminHandler{adminUC: adminUC}
 }
 

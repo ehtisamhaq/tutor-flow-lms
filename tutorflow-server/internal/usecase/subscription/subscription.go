@@ -1,22 +1,24 @@
-package usecase
+package subscription
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/tutorflow/tutorflow-server/internal/domain"
+	"github.com/tutorflow/tutorflow-server/internal/repository"
 )
 
 type subscriptionUseCase struct {
-	subscriptionRepo domain.SubscriptionRepository
-	userRepo         domain.UserRepository
+	subscriptionRepo repository.SubscriptionRepository
+	userRepo         repository.UserRepository
 }
 
 // NewSubscriptionUseCase creates a new subscription use case
-func NewSubscriptionUseCase(
-	subscriptionRepo domain.SubscriptionRepository,
-	userRepo domain.UserRepository,
+func NewUseCase(
+	subscriptionRepo repository.SubscriptionRepository,
+	userRepo repository.UserRepository,
 ) domain.SubscriptionUseCase {
 	return &subscriptionUseCase{
 		subscriptionRepo: subscriptionRepo,
@@ -25,7 +27,7 @@ func NewSubscriptionUseCase(
 }
 
 // CreatePlan creates a new subscription plan
-func (uc *subscriptionUseCase) CreatePlan(plan *domain.SubscriptionPlan) error {
+func (uc *subscriptionUseCase) CreatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error {
 	if plan.Name == "" {
 		return errors.New("plan name is required")
 	}
@@ -35,22 +37,22 @@ func (uc *subscriptionUseCase) CreatePlan(plan *domain.SubscriptionPlan) error {
 	if plan.PriceMonthly < 0 || plan.PriceYearly < 0 {
 		return errors.New("prices must be non-negative")
 	}
-	return uc.subscriptionRepo.CreatePlan(plan)
+	return uc.subscriptionRepo.CreatePlan(ctx, plan)
 }
 
 // GetPlans returns all active subscription plans
-func (uc *subscriptionUseCase) GetPlans() ([]domain.SubscriptionPlan, error) {
-	return uc.subscriptionRepo.GetActivePlans()
+func (uc *subscriptionUseCase) GetPlans(ctx context.Context) ([]domain.SubscriptionPlan, error) {
+	return uc.subscriptionRepo.GetActivePlans(ctx)
 }
 
 // GetPlanBySlug returns a plan by slug
-func (uc *subscriptionUseCase) GetPlanBySlug(slug string) (*domain.SubscriptionPlan, error) {
-	return uc.subscriptionRepo.GetPlanBySlug(slug)
+func (uc *subscriptionUseCase) GetPlanBySlug(ctx context.Context, slug string) (*domain.SubscriptionPlan, error) {
+	return uc.subscriptionRepo.GetPlanBySlug(ctx, slug)
 }
 
 // UpdatePlan updates an existing plan
-func (uc *subscriptionUseCase) UpdatePlan(plan *domain.SubscriptionPlan) error {
-	existing, err := uc.subscriptionRepo.GetPlanByID(plan.ID)
+func (uc *subscriptionUseCase) UpdatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error {
+	existing, err := uc.subscriptionRepo.GetPlanByID(ctx, plan.ID)
 	if err != nil {
 		return errors.New("plan not found")
 	}
@@ -67,23 +69,24 @@ func (uc *subscriptionUseCase) UpdatePlan(plan *domain.SubscriptionPlan) error {
 	existing.IsActive = plan.IsActive
 	existing.UpdatedAt = time.Now()
 
-	return uc.subscriptionRepo.UpdatePlan(existing)
+	return uc.subscriptionRepo.UpdatePlan(ctx, existing)
 }
 
 // Subscribe creates a new subscription for a user
 func (uc *subscriptionUseCase) Subscribe(
+	ctx context.Context,
 	userID uuid.UUID,
 	planSlug string,
 	interval domain.SubscriptionInterval,
 ) (*domain.Subscription, error) {
 	// Check if user already has an active subscription
-	existing, _ := uc.subscriptionRepo.GetActiveByUserID(userID)
+	existing, _ := uc.subscriptionRepo.GetActiveByUserID(ctx, userID)
 	if existing != nil && existing.IsActive() {
 		return nil, errors.New("user already has an active subscription")
 	}
 
 	// Get the plan
-	plan, err := uc.subscriptionRepo.GetPlanBySlug(planSlug)
+	plan, err := uc.subscriptionRepo.GetPlanBySlug(ctx, planSlug)
 	if err != nil {
 		return nil, errors.New("plan not found")
 	}
@@ -112,7 +115,7 @@ func (uc *subscriptionUseCase) Subscribe(
 		CancelAtPeriodEnd:  false,
 	}
 
-	if err := uc.subscriptionRepo.Create(subscription); err != nil {
+	if err := uc.subscriptionRepo.Create(ctx, subscription); err != nil {
 		return nil, err
 	}
 
@@ -123,13 +126,13 @@ func (uc *subscriptionUseCase) Subscribe(
 }
 
 // GetUserSubscription returns the user's current subscription
-func (uc *subscriptionUseCase) GetUserSubscription(userID uuid.UUID) (*domain.Subscription, error) {
-	return uc.subscriptionRepo.GetActiveByUserID(userID)
+func (uc *subscriptionUseCase) GetUserSubscription(ctx context.Context, userID uuid.UUID) (*domain.Subscription, error) {
+	return uc.subscriptionRepo.GetActiveByUserID(ctx, userID)
 }
 
 // CancelSubscription cancels the user's subscription at period end
-func (uc *subscriptionUseCase) CancelSubscription(userID uuid.UUID) error {
-	sub, err := uc.subscriptionRepo.GetActiveByUserID(userID)
+func (uc *subscriptionUseCase) CancelSubscription(ctx context.Context, userID uuid.UUID) error {
+	sub, err := uc.subscriptionRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
 		return errors.New("no active subscription found")
 	}
@@ -139,12 +142,12 @@ func (uc *subscriptionUseCase) CancelSubscription(userID uuid.UUID) error {
 	sub.CanceledAt = &now
 	sub.UpdatedAt = now
 
-	return uc.subscriptionRepo.Update(sub)
+	return uc.subscriptionRepo.Update(ctx, sub)
 }
 
 // ResumeSubscription resumes a canceled subscription
-func (uc *subscriptionUseCase) ResumeSubscription(userID uuid.UUID) error {
-	sub, err := uc.subscriptionRepo.GetActiveByUserID(userID)
+func (uc *subscriptionUseCase) ResumeSubscription(ctx context.Context, userID uuid.UUID) error {
+	sub, err := uc.subscriptionRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
 		return errors.New("no active subscription found")
 	}
@@ -157,20 +160,21 @@ func (uc *subscriptionUseCase) ResumeSubscription(userID uuid.UUID) error {
 	sub.CanceledAt = nil
 	sub.UpdatedAt = time.Now()
 
-	return uc.subscriptionRepo.Update(sub)
+	return uc.subscriptionRepo.Update(ctx, sub)
 }
 
 // ChangeSubscription changes the user's subscription to a new plan
 func (uc *subscriptionUseCase) ChangeSubscription(
+	ctx context.Context,
 	userID uuid.UUID,
 	newPlanSlug string,
 ) (*domain.Subscription, error) {
-	sub, err := uc.subscriptionRepo.GetActiveByUserID(userID)
+	sub, err := uc.subscriptionRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
 		return nil, errors.New("no active subscription found")
 	}
 
-	newPlan, err := uc.subscriptionRepo.GetPlanBySlug(newPlanSlug)
+	newPlan, err := uc.subscriptionRepo.GetPlanBySlug(ctx, newPlanSlug)
 	if err != nil {
 		return nil, errors.New("plan not found")
 	}
@@ -183,7 +187,7 @@ func (uc *subscriptionUseCase) ChangeSubscription(
 	sub.PlanID = newPlan.ID
 	sub.UpdatedAt = time.Now()
 
-	if err := uc.subscriptionRepo.Update(sub); err != nil {
+	if err := uc.subscriptionRepo.Update(ctx, sub); err != nil {
 		return nil, err
 	}
 
@@ -192,26 +196,26 @@ func (uc *subscriptionUseCase) ChangeSubscription(
 }
 
 // HandleWebhook handles Stripe webhook events
-func (uc *subscriptionUseCase) HandleWebhook(event string, data map[string]interface{}) error {
+func (uc *subscriptionUseCase) HandleWebhook(ctx context.Context, event string, data map[string]interface{}) error {
 	switch event {
 	case "customer.subscription.updated":
 		// Handle subscription updates from Stripe
-		return uc.handleSubscriptionUpdated(data)
+		return uc.handleSubscriptionUpdated(ctx, data)
 	case "customer.subscription.deleted":
 		// Handle subscription deletion
-		return uc.handleSubscriptionDeleted(data)
+		return uc.handleSubscriptionDeleted(ctx, data)
 	case "invoice.payment_failed":
 		// Handle failed payment
-		return uc.handlePaymentFailed(data)
+		return uc.handlePaymentFailed(ctx, data)
 	case "invoice.paid":
 		// Handle successful payment
-		return uc.handlePaymentSucceeded(data)
+		return uc.handlePaymentSucceeded(ctx, data)
 	default:
 		return nil
 	}
 }
 
-func (uc *subscriptionUseCase) handleSubscriptionUpdated(data map[string]interface{}) error {
+func (uc *subscriptionUseCase) handleSubscriptionUpdated(ctx context.Context, data map[string]interface{}) error {
 	object, ok := data["object"].(map[string]interface{})
 	if !ok {
 		return nil
@@ -227,17 +231,17 @@ func (uc *subscriptionUseCase) handleSubscriptionUpdated(data map[string]interfa
 	return nil
 }
 
-func (uc *subscriptionUseCase) handleSubscriptionDeleted(data map[string]interface{}) error {
+func (uc *subscriptionUseCase) handleSubscriptionDeleted(ctx context.Context, data map[string]interface{}) error {
 	// Mark subscription as expired
 	return nil
 }
 
-func (uc *subscriptionUseCase) handlePaymentFailed(data map[string]interface{}) error {
+func (uc *subscriptionUseCase) handlePaymentFailed(ctx context.Context, data map[string]interface{}) error {
 	// Mark subscription as past_due
 	return nil
 }
 
-func (uc *subscriptionUseCase) handlePaymentSucceeded(data map[string]interface{}) error {
+func (uc *subscriptionUseCase) handlePaymentSucceeded(ctx context.Context, data map[string]interface{}) error {
 	// Extend subscription period
 	return nil
 }

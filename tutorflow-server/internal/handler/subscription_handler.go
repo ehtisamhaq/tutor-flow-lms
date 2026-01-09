@@ -44,7 +44,7 @@ func (h *SubscriptionHandler) RegisterRoutes(e *echo.Group, authMiddleware echo.
 
 // GetPlans returns all active subscription plans
 func (h *SubscriptionHandler) GetPlans(c echo.Context) error {
-	plans, err := h.subscriptionUC.GetPlans()
+	plans, err := h.subscriptionUC.GetPlans(c.Request().Context())
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -62,7 +62,7 @@ func (h *SubscriptionHandler) GetPlans(c echo.Context) error {
 func (h *SubscriptionHandler) GetPlanBySlug(c echo.Context) error {
 	slug := c.Param("slug")
 
-	plan, err := h.subscriptionUC.GetPlanBySlug(slug)
+	plan, err := h.subscriptionUC.GetPlanBySlug(c.Request().Context(), slug)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -86,7 +86,7 @@ func (h *SubscriptionHandler) CreatePlan(c echo.Context) error {
 		})
 	}
 
-	if err := h.subscriptionUC.CreatePlan(&plan); err != nil {
+	if err := h.subscriptionUC.CreatePlan(c.Request().Context(), &plan); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -118,7 +118,7 @@ func (h *SubscriptionHandler) UpdatePlan(c echo.Context) error {
 	}
 
 	plan.ID = id
-	if err := h.subscriptionUC.UpdatePlan(&plan); err != nil {
+	if err := h.subscriptionUC.UpdatePlan(c.Request().Context(), &plan); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -135,7 +135,7 @@ func (h *SubscriptionHandler) UpdatePlan(c echo.Context) error {
 func (h *SubscriptionHandler) GetMySubscription(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	sub, err := h.subscriptionUC.GetUserSubscription(userID)
+	sub, err := h.subscriptionUC.GetUserSubscription(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -167,7 +167,7 @@ func (h *SubscriptionHandler) Subscribe(c echo.Context) error {
 		})
 	}
 
-	sub, err := h.subscriptionUC.Subscribe(userID, req.PlanSlug, req.Interval)
+	sub, err := h.subscriptionUC.Subscribe(c.Request().Context(), userID, req.PlanSlug, req.Interval)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -185,7 +185,7 @@ func (h *SubscriptionHandler) Subscribe(c echo.Context) error {
 func (h *SubscriptionHandler) Cancel(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	if err := h.subscriptionUC.CancelSubscription(userID); err != nil {
+	if err := h.subscriptionUC.CancelSubscription(c.Request().Context(), userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -202,7 +202,7 @@ func (h *SubscriptionHandler) Cancel(c echo.Context) error {
 func (h *SubscriptionHandler) Resume(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	if err := h.subscriptionUC.ResumeSubscription(userID); err != nil {
+	if err := h.subscriptionUC.ResumeSubscription(c.Request().Context(), userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -232,7 +232,7 @@ func (h *SubscriptionHandler) ChangePlan(c echo.Context) error {
 		})
 	}
 
-	sub, err := h.subscriptionUC.ChangeSubscription(userID, req.NewPlanSlug)
+	sub, err := h.subscriptionUC.ChangeSubscription(c.Request().Context(), userID, req.NewPlanSlug)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -260,7 +260,7 @@ func (h *SubscriptionHandler) HandleStripeWebhook(c echo.Context) error {
 	eventType, _ := payload["type"].(string)
 	data, _ := payload["data"].(map[string]interface{})
 
-	if err := h.subscriptionUC.HandleWebhook(eventType, data); err != nil {
+	if err := h.subscriptionUC.HandleWebhook(c.Request().Context(), eventType, data); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"time"
@@ -104,7 +105,7 @@ type SignedURL struct {
 	CreatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 
 	Video *HLSVideoAsset `gorm:"foreignKey:VideoID" json:"-"`
-	User  *User       `gorm:"foreignKey:UserID" json:"-"`
+	User  *User          `gorm:"foreignKey:UserID" json:"-"`
 }
 
 // IsValid checks if the signed URL is still valid
@@ -129,60 +130,27 @@ type DeviceSession struct {
 	User *User `gorm:"foreignKey:UserID" json:"-"`
 }
 
-// VideoRepository interface
-type VideoRepository interface {
-	// Video Assets
-	CreateAsset(asset *HLSVideoAsset) error
-	GetAssetByID(id uuid.UUID) (*HLSVideoAsset, error)
-	GetAssetByLessonID(lessonID uuid.UUID) (*HLSVideoAsset, error)
-	UpdateAsset(asset *HLSVideoAsset) error
-	DeleteAsset(id uuid.UUID) error
-
-	// Quality variants
-	CreateQuality(quality *VideoQuality) error
-	GetQualitiesByVideoID(videoID uuid.UUID) ([]VideoQuality, error)
-
-	// Encryption
-	CreateEncryption(encryption *VideoEncryption) error
-	GetEncryptionByVideoID(videoID uuid.UUID) (*VideoEncryption, error)
-	UpdateEncryption(encryption *VideoEncryption) error
-
-	// Signed URLs
-	CreateSignedURL(signedURL *SignedURL) error
-	GetSignedURLByToken(token string) (*SignedURL, error)
-	MarkSignedURLUsed(token string) error
-	CleanupExpiredURLs() error
-
-	// Device Sessions
-	CreateDeviceSession(session *DeviceSession) error
-	GetDeviceSession(userID uuid.UUID, deviceID string) (*DeviceSession, error)
-	GetUserDeviceSessions(userID uuid.UUID) ([]DeviceSession, error)
-	CountActiveDevices(userID uuid.UUID) (int64, error)
-	UpdateDeviceSession(session *DeviceSession) error
-	DeactivateDeviceSession(id uuid.UUID) error
-}
-
 // VideoUseCase interface
 type VideoUseCase interface {
 	// Upload & Processing
-	UploadVideo(lessonID uuid.UUID, fileURL string) (*HLSVideoAsset, error)
-	ProcessVideo(videoID uuid.UUID) error
-	GetProcessingStatus(videoID uuid.UUID) (*HLSVideoAsset, error)
+	UploadVideo(ctx context.Context, lessonID uuid.UUID, fileURL string) (*HLSVideoAsset, error)
+	ProcessVideo(ctx context.Context, videoID uuid.UUID) error
+	GetProcessingStatus(ctx context.Context, videoID uuid.UUID) (*HLSVideoAsset, error)
 
 	// Playback
-	GetPlaybackURL(lessonID, userID uuid.UUID, deviceID string) (string, error)
-	GetEncryptionKey(token string) ([]byte, error)
-	ValidatePlayback(token string) error
+	GetPlaybackURL(ctx context.Context, lessonID, userID uuid.UUID, deviceID string) (string, error)
+	GetEncryptionKey(ctx context.Context, token string) ([]byte, error)
+	ValidatePlayback(ctx context.Context, token string) error
 
 	// DRM
-	EnableEncryption(videoID uuid.UUID, encType HLSEncryptionType) error
-	RotateEncryptionKey(videoID uuid.UUID) error
+	EnableEncryption(ctx context.Context, videoID uuid.UUID, encType HLSEncryptionType) error
+	RotateEncryptionKey(ctx context.Context, videoID uuid.UUID) error
 
 	// Device Management
-	RegisterDevice(userID uuid.UUID, deviceID, deviceName, deviceType string) error
-	GetUserDevices(userID uuid.UUID) ([]DeviceSession, error)
-	RemoveDevice(userID uuid.UUID, deviceID string) error
-	ValidateDeviceLimit(userID uuid.UUID) error
+	RegisterDevice(ctx context.Context, userID uuid.UUID, deviceID, deviceName, deviceType string) error
+	GetUserDevices(ctx context.Context, userID uuid.UUID) ([]DeviceSession, error)
+	RemoveDevice(ctx context.Context, userID uuid.UUID, deviceID string) error
+	ValidateDeviceLimit(ctx context.Context, userID uuid.UUID) error
 }
 
 // HLSConfig defines HLS encoding settings

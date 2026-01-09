@@ -29,6 +29,7 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/admin"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/announcement"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/auth"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/bundle"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/cart"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/certificate"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/course"
@@ -38,11 +39,15 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/usecase/message"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/notification"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/order"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/peer_review"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/quiz"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/refund"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/reports"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/review"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/search"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/subscription"
 	"github.com/tutorflow/tutorflow-server/internal/usecase/user"
+	"github.com/tutorflow/tutorflow-server/internal/usecase/video"
 )
 
 // App is the main application struct
@@ -135,6 +140,11 @@ func (a *App) Run() error {
 	scheduledReportRepo := postgres.NewScheduledReportRepository(db)
 	messageRepo := postgres.NewMessageRepository(db)
 	learningPathRepo := postgres.NewLearningPathRepository(db)
+	videoRepo := postgres.NewVideoRepository(db)
+	subscriptionRepo := postgres.NewSubscriptionRepository(db)
+	refundRepo := postgres.NewRefundRepository(db)
+	bundleRepo := postgres.NewBundleRepository(db)
+	peerReviewRepo := postgres.NewPeerReviewRepository(db)
 
 	// Initialize services
 	storageSvc := storage.NewService(a.cfg.Storage)
@@ -166,6 +176,11 @@ func (a *App) Run() error {
 	announcementUC := announcement.NewUseCase(announcementRepo, courseRepo, enrollmentRepo, notificationRepo)
 	messageUC := message.NewUseCase(messageRepo, userRepo)
 	learningPathUC := learningpath.NewUseCase(learningPathRepo, enrollmentRepo, certRepo)
+	videoUC := video.NewUseCase(videoRepo, lessonRepo, enrollmentRepo, a.cfg.JWT.Secret)
+	subscriptionUC := subscription.NewUseCase(subscriptionRepo, userRepo)
+	refundUC := refund.NewUseCase(refundRepo, orderRepo, enrollmentRepo)
+	bundleUC := bundle.NewUseCase(bundleRepo, courseRepo, orderRepo, enrollmentRepo)
+	peerReviewUC := peer_review.NewUseCase(peerReviewRepo, lessonRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -181,12 +196,17 @@ func (a *App) Run() error {
 	discussionHandler := handler.NewDiscussionHandler(discussionUC)
 	certificateHandler := handler.NewCertificateHandler(certificateUC)
 	searchHandler := handler.NewSearchHandler(searchUC)
-	adminHandler := handler.NewAdminHandler(adminUC)
+	adminHandler := handler.NewAdminDashboardHandler(adminUC)
 	announcementHandler := handler.NewAnnouncementHandler(announcementUC)
 	messageHandler := handler.NewMessageHandler(messageUC)
 	pushHandler := handler.NewPushHandler(pushSvc)
 	learningPathHandler := handler.NewLearningPathHandler(learningPathUC)
 	reportHandler := handler.NewReportHandler(reportUC)
+	videoHandler := handler.NewVideoHandler(videoUC)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionUC)
+	refundHandler := handler.NewRefundHandler(refundUC)
+	bundleHandler := handler.NewBundleHandler(bundleUC)
+	peerReviewHandler := handler.NewPeerReviewHandler(peerReviewUC)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)
@@ -218,6 +238,11 @@ func (a *App) Run() error {
 	pushHandler.RegisterRoutes(api, authMW)
 	learningPathHandler.RegisterRoutes(api, authMW, optionalAuthMW, adminMW)
 	reportHandler.RegisterRoutes(api, authMW, adminMW)
+	videoHandler.RegisterRoutes(api, authMW)
+	subscriptionHandler.RegisterRoutes(api, authMW)
+	refundHandler.RegisterRoutes(api, authMW)
+	bundleHandler.RegisterRoutes(api, authMW)
+	peerReviewHandler.RegisterRoutes(api, authMW)
 
 	// Swagger route
 	a.echo.GET("/swagger/*", echoSwagger.WrapHandler)

@@ -55,7 +55,7 @@ func (h *RefundHandler) RequestRefund(c echo.Context) error {
 		})
 	}
 
-	refund, err := h.refundUC.RequestRefund(userID, req.OrderID, req.Reason, req.Description)
+	refund, err := h.refundUC.RequestRefund(c.Request().Context(), userID, req.OrderID, req.Reason, req.Description)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -74,7 +74,7 @@ func (h *RefundHandler) GetMyRefunds(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 	page, limit := getPagination(c)
 
-	refunds, total, err := h.refundUC.GetUserRefunds(userID, page, limit)
+	refunds, total, err := h.refundUC.GetUserRefunds(c.Request().Context(), userID, page, limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -103,7 +103,7 @@ func (h *RefundHandler) GetRefund(c echo.Context) error {
 		})
 	}
 
-	refund, err := h.refundUC.GetRefundByID(id)
+	refund, err := h.refundUC.GetRefundByID(c.Request().Context(), id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -127,7 +127,7 @@ func (h *RefundHandler) GetAllRefunds(c echo.Context) error {
 		status = &st
 	}
 
-	refunds, total, err := h.refundUC.GetAllRefunds(status, page, limit)
+	refunds, total, err := h.refundUC.GetAllRefunds(c.Request().Context(), status, page, limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -150,7 +150,7 @@ func (h *RefundHandler) GetAllRefunds(c echo.Context) error {
 func (h *RefundHandler) GetPendingRefunds(c echo.Context) error {
 	page, limit := getPagination(c)
 
-	refunds, total, err := h.refundUC.GetPendingRefunds(page, limit)
+	refunds, total, err := h.refundUC.GetPendingRefunds(c.Request().Context(), page, limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -189,7 +189,7 @@ func (h *RefundHandler) ApproveRefund(c echo.Context) error {
 	var req RefundActionRequest
 	c.Bind(&req)
 
-	refund, err := h.refundUC.ApproveRefund(id, adminID, req.Notes)
+	refund, err := h.refundUC.ApproveRefund(c.Request().Context(), id, adminID, req.Notes)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -218,7 +218,7 @@ func (h *RefundHandler) RejectRefund(c echo.Context) error {
 	var req RefundActionRequest
 	c.Bind(&req)
 
-	refund, err := h.refundUC.RejectRefund(id, adminID, req.Notes)
+	refund, err := h.refundUC.RejectRefund(c.Request().Context(), id, adminID, req.Notes)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,

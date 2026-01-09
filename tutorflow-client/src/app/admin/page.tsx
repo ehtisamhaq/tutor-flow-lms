@@ -22,7 +22,7 @@ interface DashboardStats {
 
 // Server Component
 export default async function AdminDashboardPage() {
-  const stats = await authServerFetch<DashboardStats>("/admin/dashboard/stats");
+  const stats = await authServerFetch<DashboardStats>("/admin/dashboard");
 
   const cards = [
     {

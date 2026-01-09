@@ -1,30 +1,11 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: "/api", // Now hitting the proxy.ts
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-// Request interceptor to add auth token
-api.interceptors.request.use((config) => {
-  const token = Cookies.get("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  // Add session ID for guest cart support
-  const sessionId = Cookies.get("sessionId");
-  if (sessionId) {
-    config.headers["X-Session-ID"] = sessionId;
-  }
-
-  return config;
 });
 
 // Response interceptor to handle token refresh
@@ -39,7 +20,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = Cookies.get("refreshToken");
         if (refreshToken) {
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
+          const response = await axios.post("/api/auth/refresh", {
             refresh_token: refreshToken,
           });
 
@@ -47,7 +28,7 @@ api.interceptors.response.use(
           Cookies.set("accessToken", access_token, { expires: 1 / 24 }); // 1 hour
           Cookies.set("refreshToken", refresh_token, { expires: 7 }); // 7 days
 
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          // The proxy will automatically attach the new accessToken to this retry
           return api(originalRequest);
         }
       } catch {

@@ -10,6 +10,9 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  Package,
+  CreditCard,
+  RotateCcw,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminHeader } from "@/components/admin/header";
@@ -21,8 +24,23 @@ async function checkAdminAuth() {
   if (!token) {
     redirect("/login");
   }
-  // In production, decode JWT and check role
-  return token.value;
+
+  // Decode JWT to check role (JWT is base64 encoded)
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.value.split(".")[1], "base64").toString()
+    );
+    const role = payload.role || payload.user_role || "student";
+
+    // Only allow admin and manager roles
+    if (role !== "admin" && role !== "manager") {
+      redirect("/dashboard?error=unauthorized");
+    }
+
+    return { token: token.value, role };
+  } catch {
+    redirect("/login");
+  }
 }
 
 export default async function AdminLayout({
@@ -36,6 +54,13 @@ export default async function AdminLayout({
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/courses", label: "Courses", icon: BookOpen },
+    { href: "/admin/bundles", label: "Bundles", icon: Package },
+    {
+      href: "/admin/subscription-plans",
+      label: "Subscriptions",
+      icon: CreditCard,
+    },
+    { href: "/admin/refunds", label: "Refunds", icon: RotateCcw },
     { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
     { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/admin/settings", label: "Settings", icon: Settings },

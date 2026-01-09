@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -96,57 +97,25 @@ type PeerReviewConfig struct {
 	Criteria []PeerReviewCriteria `gorm:"foreignKey:LessonID;references:LessonID" json:"criteria,omitempty"`
 }
 
-// PeerReviewRepository interface
-type PeerReviewRepository interface {
-	// Config
-	CreateConfig(config *PeerReviewConfig) error
-	GetConfigByLessonID(lessonID uuid.UUID) (*PeerReviewConfig, error)
-	UpdateConfig(config *PeerReviewConfig) error
-
-	// Criteria
-	CreateCriteria(criteria *PeerReviewCriteria) error
-	GetCriteriaByLessonID(lessonID uuid.UUID) ([]PeerReviewCriteria, error)
-	UpdateCriteria(criteria *PeerReviewCriteria) error
-	DeleteCriteria(id uuid.UUID) error
-
-	// Assignments
-	CreateAssignment(assignment *PeerReviewAssignment) error
-	GetAssignmentByID(id uuid.UUID) (*PeerReviewAssignment, error)
-	GetAssignmentsForReviewer(reviewerID uuid.UUID) ([]PeerReviewAssignment, error)
-	GetAssignmentsForSubmission(submissionID uuid.UUID) ([]PeerReviewAssignment, error)
-	UpdateAssignment(assignment *PeerReviewAssignment) error
-
-	// Reviews
-	CreateReview(review *PeerReview) error
-	GetReviewByAssignmentID(assignmentID uuid.UUID) (*PeerReview, error)
-	GetReviewsForSubmission(submissionID uuid.UUID) ([]PeerReview, error)
-	CreateScore(score *PeerReviewScore) error
-	GetScoresByReviewID(reviewID uuid.UUID) ([]PeerReviewScore, error)
-
-	// Auto-assignment
-	GetPendingSubmissionsForAssignment(lessonID uuid.UUID) ([]Submission, error)
-	GetEligibleReviewers(lessonID, excludeUserID uuid.UUID) ([]User, error)
-}
-
 // PeerReviewUseCase interface
 type PeerReviewUseCase interface {
 	// Config
-	ConfigurePeerReview(lessonID uuid.UUID, config *PeerReviewConfig) error
-	GetPeerReviewConfig(lessonID uuid.UUID) (*PeerReviewConfig, error)
+	ConfigurePeerReview(ctx context.Context, lessonID uuid.UUID, config *PeerReviewConfig) error
+	GetPeerReviewConfig(ctx context.Context, lessonID uuid.UUID) (*PeerReviewConfig, error)
 
 	// Criteria
-	AddCriteria(lessonID uuid.UUID, criteria *PeerReviewCriteria) error
-	UpdateCriteria(criteria *PeerReviewCriteria) error
-	RemoveCriteria(id uuid.UUID) error
+	AddCriteria(ctx context.Context, lessonID uuid.UUID, criteria *PeerReviewCriteria) error
+	UpdateCriteria(ctx context.Context, criteria *PeerReviewCriteria) error
+	RemoveCriteria(ctx context.Context, id uuid.UUID) error
 
 	// Review Process
-	AssignReviewers(submissionID uuid.UUID) error
-	GetMyReviewAssignments(userID uuid.UUID) ([]PeerReviewAssignment, error)
-	SubmitReview(assignmentID uuid.UUID, review *PeerReview, scores []PeerReviewScore) error
-	GetReviewsForMySubmission(userID, lessonID uuid.UUID) ([]PeerReview, error)
-	DisputeReview(reviewID uuid.UUID, reason string) error
+	AssignReviewers(ctx context.Context, submissionID uuid.UUID) error
+	GetMyReviewAssignments(ctx context.Context, userID uuid.UUID) ([]PeerReviewAssignment, error)
+	SubmitReview(ctx context.Context, assignmentID uuid.UUID, review *PeerReview, scores []PeerReviewScore) error
+	GetReviewsForMySubmission(ctx context.Context, userID, lessonID uuid.UUID) ([]PeerReview, error)
+	DisputeReview(ctx context.Context, reviewID uuid.UUID, reason string) error
 
 	// Auto-assignment
-	AutoAssignPendingReviews() error
-	CalculateFinalScore(submissionID uuid.UUID) (float64, error)
+	AutoAssignPendingReviews(ctx context.Context) error
+	CalculateFinalScore(ctx context.Context, submissionID uuid.UUID) (float64, error)
 }

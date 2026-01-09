@@ -409,3 +409,114 @@ type ScheduledReportRepository interface {
 	GetDueReports(ctx context.Context) ([]domain.ScheduledReport, error)
 	UpdateLastRun(ctx context.Context, id uuid.UUID, runAt time.Time, nextRunAt time.Time) error
 }
+
+// VideoRepository interface
+type VideoRepository interface {
+	// Video Assets
+	CreateAsset(ctx context.Context, asset *domain.HLSVideoAsset) error
+	GetAssetByID(ctx context.Context, id uuid.UUID) (*domain.HLSVideoAsset, error)
+	GetAssetByLessonID(ctx context.Context, lessonID uuid.UUID) (*domain.HLSVideoAsset, error)
+	UpdateAsset(ctx context.Context, asset *domain.HLSVideoAsset) error
+	DeleteAsset(ctx context.Context, id uuid.UUID) error
+
+	// Quality variants
+	CreateQuality(ctx context.Context, quality *domain.VideoQuality) error
+	GetQualitiesByVideoID(ctx context.Context, videoID uuid.UUID) ([]domain.VideoQuality, error)
+
+	// Encryption
+	CreateEncryption(ctx context.Context, encryption *domain.VideoEncryption) error
+	GetEncryptionByVideoID(ctx context.Context, videoID uuid.UUID) (*domain.VideoEncryption, error)
+	UpdateEncryption(ctx context.Context, encryption *domain.VideoEncryption) error
+
+	// Signed URLs
+	CreateSignedURL(ctx context.Context, signedURL *domain.SignedURL) error
+	GetSignedURLByToken(ctx context.Context, token string) (*domain.SignedURL, error)
+	MarkSignedURLUsed(ctx context.Context, token string) error
+	CleanupExpiredURLs(ctx context.Context) error
+
+	// Device Sessions
+	CreateDeviceSession(ctx context.Context, session *domain.DeviceSession) error
+	GetDeviceSession(ctx context.Context, userID uuid.UUID, deviceID string) (*domain.DeviceSession, error)
+	GetUserDeviceSessions(ctx context.Context, userID uuid.UUID) ([]domain.DeviceSession, error)
+	CountActiveDevices(ctx context.Context, userID uuid.UUID) (int64, error)
+	UpdateDeviceSession(ctx context.Context, session *domain.DeviceSession) error
+	DeactivateDeviceSession(ctx context.Context, id uuid.UUID) error
+}
+
+// SubscriptionRepository interface
+type SubscriptionRepository interface {
+	// Plans
+	CreatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error
+	GetPlanByID(ctx context.Context, id uuid.UUID) (*domain.SubscriptionPlan, error)
+	GetPlanBySlug(ctx context.Context, slug string) (*domain.SubscriptionPlan, error)
+	GetActivePlans(ctx context.Context) ([]domain.SubscriptionPlan, error)
+	UpdatePlan(ctx context.Context, plan *domain.SubscriptionPlan) error
+
+	// Subscriptions
+	Create(ctx context.Context, subscription *domain.Subscription) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Subscription, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*domain.Subscription, error)
+	GetActiveByUserID(ctx context.Context, userID uuid.UUID) (*domain.Subscription, error)
+	Update(ctx context.Context, subscription *domain.Subscription) error
+	Cancel(ctx context.Context, id uuid.UUID) error
+	GetExpiringSubscriptions(ctx context.Context, days int) ([]domain.Subscription, error)
+}
+
+// BundleRepository interface
+type BundleRepository interface {
+	Create(ctx context.Context, bundle *domain.Bundle) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Bundle, error)
+	GetBySlug(ctx context.Context, slug string) (*domain.Bundle, error)
+	GetActive(ctx context.Context, page, limit int) ([]domain.Bundle, int64, error)
+	GetByCategory(ctx context.Context, categoryID uuid.UUID) ([]domain.Bundle, error)
+	Update(ctx context.Context, bundle *domain.Bundle) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	AddCourse(ctx context.Context, bundleID, courseID uuid.UUID, order int) error
+	RemoveCourse(ctx context.Context, bundleID, courseID uuid.UUID) error
+	GetCourses(ctx context.Context, bundleID uuid.UUID) ([]domain.Course, error)
+	RecordPurchase(ctx context.Context, purchase *domain.BundlePurchase) error
+	GetUserPurchases(ctx context.Context, userID uuid.UUID) ([]domain.BundlePurchase, error)
+	IncrementPurchaseCount(ctx context.Context, bundleID uuid.UUID) error
+}
+
+// RefundRepository interface
+type RefundRepository interface {
+	Create(ctx context.Context, refund *domain.Refund) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Refund, error)
+	Update(ctx context.Context, refund *domain.Refund) error
+	GetByOrderID(ctx context.Context, orderID uuid.UUID) (*domain.Refund, error)
+	List(ctx context.Context, status *domain.RefundStatus, page, limit int) ([]domain.Refund, int64, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.Refund, int64, error)
+}
+
+// PeerReviewRepository interface
+type PeerReviewRepository interface {
+	// Config
+	CreateConfig(ctx context.Context, config *domain.PeerReviewConfig) error
+	GetConfigByLessonID(ctx context.Context, lessonID uuid.UUID) (*domain.PeerReviewConfig, error)
+	UpdateConfig(ctx context.Context, config *domain.PeerReviewConfig) error
+
+	// Criteria
+	CreateCriteria(ctx context.Context, criteria *domain.PeerReviewCriteria) error
+	GetCriteriaByLessonID(ctx context.Context, lessonID uuid.UUID) ([]domain.PeerReviewCriteria, error)
+	UpdateCriteria(ctx context.Context, criteria *domain.PeerReviewCriteria) error
+	DeleteCriteria(ctx context.Context, id uuid.UUID) error
+
+	// Assignments
+	CreateAssignment(ctx context.Context, assignment *domain.PeerReviewAssignment) error
+	GetAssignmentByID(ctx context.Context, id uuid.UUID) (*domain.PeerReviewAssignment, error)
+	GetAssignmentsByReviewerID(ctx context.Context, reviewerID uuid.UUID) ([]domain.PeerReviewAssignment, error)
+	GetAssignmentsBySubmissionID(ctx context.Context, submissionID uuid.UUID) ([]domain.PeerReviewAssignment, error)
+	UpdateAssignment(ctx context.Context, assignment *domain.PeerReviewAssignment) error
+
+	// Reviews
+	CreateReview(ctx context.Context, review *domain.PeerReview) error
+	GetReviewByAssignmentID(ctx context.Context, assignmentID uuid.UUID) (*domain.PeerReview, error)
+	GetReviewsForSubmission(ctx context.Context, submissionID uuid.UUID) ([]domain.PeerReview, error)
+	CreateScore(ctx context.Context, score *domain.PeerReviewScore) error
+	GetScoresByReviewID(ctx context.Context, reviewID uuid.UUID) ([]domain.PeerReviewScore, error)
+
+	// Auto-assignment
+	GetPendingSubmissionsForAssignment(ctx context.Context, lessonID uuid.UUID) ([]domain.Submission, error)
+	GetEligibleReviewers(ctx context.Context, lessonID, excludeUserID uuid.UUID) ([]domain.User, error)
+}

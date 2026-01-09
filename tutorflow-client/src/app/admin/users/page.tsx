@@ -2,14 +2,9 @@ import Link from "next/link";
 import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Users,
-  Plus,
-  MoreHorizontal,
-  Shield,
-  User,
-  GraduationCap,
-} from "lucide-react";
+import { UserSearch } from "@/components/admin/user-search";
+import { UserActions } from "@/components/admin/user-actions";
+import { Users, Plus, Shield, User, GraduationCap } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -17,7 +12,7 @@ interface AdminUser {
   last_name: string;
   email: string;
   role: "admin" | "manager" | "tutor" | "student";
-  status: "active" | "inactive" | "suspended";
+  status: "active" | "inactive" | "suspended" | "pending";
   created_at: string;
 }
 
@@ -49,45 +44,60 @@ function getRoleBadgeColor(role: string) {
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; role?: string }>;
+  searchParams: Promise<{ page?: string; role?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const role = params.role || "";
+  const query = params.q || "";
+
+  // Build query string
+  const queryParts = [`page=${page}`, "limit=20"];
+  if (role) queryParts.push(`role=${role}`);
+  if (query) queryParts.push(`search=${encodeURIComponent(query)}`);
 
   const users = await authServerFetch<PaginatedResponse<AdminUser>>(
-    `/admin/users?page=${page}&limit=20${role ? `&role=${role}` : ""}`
+    `/users?${queryParts.join("&")}`
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Users</h2>
           <p className="text-muted-foreground">
             Manage all users on the platform
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
+        <Button asChild>
+          <Link href="/admin/users/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Add User
+          </Link>
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        {["", "admin", "manager", "tutor", "student"].map((r) => (
-          <Button
-            key={r}
-            variant={role === r ? "default" : "outline"}
-            size="sm"
-            asChild
-          >
-            <Link href={`/admin/users${r ? `?role=${r}` : ""}`}>
-              {r || "All"}
-            </Link>
-          </Button>
-        ))}
+      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          {["", "admin", "manager", "tutor", "student"].map((r) => (
+            <Button
+              key={r}
+              variant={role === r ? "default" : "outline"}
+              size="sm"
+              asChild
+            >
+              <Link
+                href={`/admin/users?role=${r}${query ? `&q=${query}` : ""}`}
+              >
+                {r ? r.charAt(0).toUpperCase() + r.slice(1) : "All"}
+              </Link>
+            </Button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <UserSearch />
       </div>
 
       <Card>
@@ -96,7 +106,7 @@ export default async function AdminUsersPage({
         </CardHeader>
         <CardContent className="p-0">
           {users?.items?.length ? (
-            <div className="divide-y">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {users.items.map((user) => {
                 const RoleIcon = getRoleIcon(user.role);
                 return (
@@ -119,24 +129,24 @@ export default async function AdminUsersPage({
                     </div>
                     <div className="flex items-center gap-4">
                       <span
-                        className={`text-xs px-2 py-1 rounded-full capitalize ${getRoleBadgeColor(
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight ${getRoleBadgeColor(
                           user.role
                         )}`}
                       >
                         {user.role}
                       </span>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight ${
                           user.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : user.status === "suspended"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
                         }`}
                       >
                         {user.status}
                       </span>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <UserActions user={user} />
                     </div>
                   </div>
                 );

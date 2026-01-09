@@ -100,6 +100,25 @@ func AutoMigrate(db *gorm.DB) error {
 
 		// Playback
 		&domain.PlaybackSession{},
+
+		// Subscriptions
+		&domain.SubscriptionPlan{},
+		&domain.Subscription{},
+
+		// Refunds
+		&domain.Refund{},
+
+		// Bundles
+		&domain.Bundle{},
+		&domain.BundleCourse{},
+		&domain.BundlePurchase{},
+
+		// Peer Reviews
+		&domain.PeerReviewConfig{},
+		&domain.PeerReviewCriteria{},
+		&domain.PeerReviewAssignment{},
+		&domain.PeerReview{},
+		&domain.PeerReviewScore{},
 	)
 }
 

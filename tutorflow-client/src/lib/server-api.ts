@@ -1,107 +1,81 @@
 // Server-side API utilities for SSR data fetching
-const API_URL = process.env.API_URL || "http://localhost:8080/api/v1";
+const BACKEND_URL =
+  process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: {
-    code: string;
-    message: string;
-  };
+// Internal fetch that hits the backend directly (used by Proxy and can be used by SSR)
+async function internalFetch<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T | null> {
+  try {
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = await response.json();
+
+    // If it's a paginated response, wrap it in our PaginatedResponse structure
+    if (json.meta) {
+      return {
+        items: json.data,
+        total: json.meta.total,
+        page: json.meta.page,
+        limit: json.meta.per_page,
+        total_pages: json.meta.total_pages,
+      } as any;
+    }
+
+    return json.data;
+  } catch (error) {
+    return null;
+  }
 }
 
 export async function serverFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T | null> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      next: { revalidate: 60 }, // Cache for 60 seconds
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`API Error: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    const json: ApiResponse<T> = await response.json();
-    return json.data;
-  } catch (error) {
-    // Don't log in production to avoid noise when backend is down
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `Server fetch failed for ${endpoint}:`,
-        error instanceof Error ? error.message : "Unknown error"
-      );
-    }
-    return null;
-  }
+  return internalFetch<T>(endpoint, options);
 }
 
-// Authenticated server fetch - gets token from cookies
+// Authenticated server fetch - gets token from cookies and hits backend directly
 export async function authServerFetch<T>(
   endpoint: string,
   options: RequestInit = {},
   revalidate: number | false = 60
 ): Promise<T | null> {
-  // Dynamic import to avoid bundling issues
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken");
+  const token = cookieStore.get("accessToken")?.value;
 
-  if (!token) {
-    return null;
+  const headers: Record<string, string> = {
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token.value}`,
-        ...options.headers,
-      },
-      next: revalidate === false ? { revalidate: 0 } : { revalidate },
-      cache: revalidate === false ? "no-store" : undefined,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          `Auth API Error: ${response.status} ${response.statusText}`
-        );
-      }
-      return null;
-    }
-
-    const json: ApiResponse<T> = await response.json();
-    return json.data;
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `Auth fetch failed for ${endpoint}:`,
-        error instanceof Error ? error.message : "Unknown error"
-      );
-    }
-    return null;
+  // Add session ID if it exists
+  const sessionId = cookieStore.get("sessionId")?.value;
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
   }
+
+  return internalFetch<T>(endpoint, {
+    ...options,
+    headers,
+    next: revalidate === false ? { revalidate: 0 } : { revalidate },
+    cache: revalidate === false ? "no-store" : undefined,
+  });
 }
 
 // Typed API endpoints
@@ -138,6 +112,7 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   limit: number;
+  total_pages?: number;
 }
 
 // Mock data for when the API is unavailable

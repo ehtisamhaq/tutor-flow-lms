@@ -50,6 +50,16 @@ type UploadVideoRequest struct {
 
 // UploadVideo uploads a video for a lesson
 func (h *VideoHandler) UploadVideo(c echo.Context) error {
+	// For now, accept url in the request body for testing
+	// We use an inline struct or the UpgradeVideoRequest type, but let's stick to what was working or simple.
+	// The problem in previous edit was removing the struct closing brace.
+	// Let's just fix the function body to use new req structure if needed, or stick to old one but pass context.
+
+	// Revert to using UploadVideoRequest but with context
+	// Actually, I changed the input to take LessonID in body in previous attempt?
+	// Original code took LessonID from Param.
+	// Let's stick to Param for LessonID as that's RESTful.
+
 	lessonID, err := uuid.Parse(c.Param("lessonId"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -66,7 +76,7 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 		})
 	}
 
-	asset, err := h.videoUC.UploadVideo(lessonID, req.FileURL)
+	asset, err := h.videoUC.UploadVideo(c.Request().Context(), lessonID, req.FileURL)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -82,7 +92,7 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 
 // GetProcessingStatus returns video processing status
 func (h *VideoHandler) GetProcessingStatus(c echo.Context) error {
-	lessonID, err := uuid.Parse(c.Param("lessonId"))
+	id, err := uuid.Parse(c.Param("lessonId"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -91,7 +101,7 @@ func (h *VideoHandler) GetProcessingStatus(c echo.Context) error {
 	}
 
 	// Get video asset by lesson ID
-	asset, err := h.videoUC.GetProcessingStatus(lessonID)
+	status, err := h.videoUC.GetProcessingStatus(c.Request().Context(), id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -101,7 +111,7 @@ func (h *VideoHandler) GetProcessingStatus(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"success": true,
-		"data":    asset,
+		"data":    status,
 	})
 }
 
@@ -118,7 +128,7 @@ func (h *VideoHandler) GetPlaybackURL(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 	deviceID := c.QueryParam("device_id")
 
-	url, err := h.videoUC.GetPlaybackURL(lessonID, userID, deviceID)
+	url, err := h.videoUC.GetPlaybackURL(c.Request().Context(), lessonID, userID, deviceID)
 	if err != nil {
 		return c.JSON(http.StatusForbidden, map[string]interface{}{
 			"success": false,
@@ -154,14 +164,15 @@ func (h *VideoHandler) AuthorizePlayback(c echo.Context) error {
 	}
 
 	// Validate device limit
-	if err := h.videoUC.ValidateDeviceLimit(userID); err != nil {
+	if err := h.videoUC.ValidateDeviceLimit(c.Request().Context(), userID); err != nil {
 		return c.JSON(http.StatusForbidden, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
 		})
 	}
 
-	url, err := h.videoUC.GetPlaybackURL(req.LessonID, userID, req.DeviceID)
+	// Generate signed URL
+	url, err := h.videoUC.GetPlaybackURL(c.Request().Context(), req.LessonID, userID, req.DeviceID)
 	if err != nil {
 		return c.JSON(http.StatusForbidden, map[string]interface{}{
 			"success": false,
@@ -205,7 +216,7 @@ func (h *VideoHandler) Heartbeat(c echo.Context) error {
 func (h *VideoHandler) GetDevices(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	devices, err := h.videoUC.GetUserDevices(userID)
+	devices, err := h.videoUC.GetUserDevices(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -224,7 +235,7 @@ func (h *VideoHandler) RemoveDevice(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 	deviceID := c.Param("deviceId")
 
-	if err := h.videoUC.RemoveDevice(userID, deviceID); err != nil {
+	if err := h.videoUC.RemoveDevice(c.Request().Context(), userID, deviceID); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -241,7 +252,7 @@ func (h *VideoHandler) RemoveDevice(c echo.Context) error {
 func (h *VideoHandler) GetEncryptionKey(c echo.Context) error {
 	token := c.Param("token")
 
-	key, err := h.videoUC.GetEncryptionKey(token)
+	key, err := h.videoUC.GetEncryptionKey(c.Request().Context(), token)
 	if err != nil {
 		return c.NoContent(http.StatusForbidden)
 	}
@@ -272,7 +283,7 @@ func (h *VideoHandler) EnableEncryption(c echo.Context) error {
 		req.EncryptionType = domain.HLSEncryptionAES128
 	}
 
-	if err := h.videoUC.EnableEncryption(id, req.EncryptionType); err != nil {
+	if err := h.videoUC.EnableEncryption(c.Request().Context(), id, req.EncryptionType); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -295,7 +306,7 @@ func (h *VideoHandler) RotateKey(c echo.Context) error {
 		})
 	}
 
-	if err := h.videoUC.RotateEncryptionKey(id); err != nil {
+	if err := h.videoUC.RotateEncryptionKey(c.Request().Context(), id); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},

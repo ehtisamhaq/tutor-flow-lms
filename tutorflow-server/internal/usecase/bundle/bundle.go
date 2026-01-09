@@ -1,27 +1,29 @@
-package usecase
+package bundle
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
 	"github.com/tutorflow/tutorflow-server/internal/domain"
+	"github.com/tutorflow/tutorflow-server/internal/repository"
 )
 
 type bundleUseCase struct {
-	bundleRepo     domain.BundleRepository
-	courseRepo     domain.CourseRepository
-	orderRepo      domain.OrderRepository
-	enrollmentRepo domain.EnrollmentRepository
+	bundleRepo     repository.BundleRepository
+	courseRepo     repository.CourseRepository
+	orderRepo      repository.OrderRepository
+	enrollmentRepo repository.EnrollmentRepository
 }
 
-// NewBundleUseCase creates a new bundle use case
-func NewBundleUseCase(
-	bundleRepo domain.BundleRepository,
-	courseRepo domain.CourseRepository,
-	orderRepo domain.OrderRepository,
-	enrollmentRepo domain.EnrollmentRepository,
+// NewUseCase creates a new bundle use case
+func NewUseCase(
+	bundleRepo repository.BundleRepository,
+	courseRepo repository.CourseRepository,
+	orderRepo repository.OrderRepository,
+	enrollmentRepo repository.EnrollmentRepository,
 ) domain.BundleUseCase {
 	return &bundleUseCase{
 		bundleRepo:     bundleRepo,
@@ -33,6 +35,7 @@ func NewBundleUseCase(
 
 // CreateBundle creates a new course bundle
 func (uc *bundleUseCase) CreateBundle(
+	ctx context.Context,
 	bundle *domain.Bundle,
 	courseIDs []uuid.UUID,
 ) (*domain.Bundle, error) {
@@ -52,7 +55,7 @@ func (uc *bundleUseCase) CreateBundle(
 	// Calculate original price from courses
 	var originalPrice float64
 	for _, courseID := range courseIDs {
-		course, err := uc.courseRepo.GetByID(courseID)
+		course, err := uc.courseRepo.GetByID(ctx, courseID)
 		if err != nil {
 			return nil, errors.New("course not found: " + courseID.String())
 		}
@@ -67,24 +70,24 @@ func (uc *bundleUseCase) CreateBundle(
 	bundle.BundlePrice = originalPrice * (1 - bundle.DiscountPercent/100)
 	bundle.Type = domain.BundleTypeFixed
 
-	if err := uc.bundleRepo.Create(bundle); err != nil {
+	if err := uc.bundleRepo.Create(ctx, bundle); err != nil {
 		return nil, err
 	}
 
 	// Add courses to bundle
 	for i, courseID := range courseIDs {
-		if err := uc.bundleRepo.AddCourse(bundle.ID, courseID, i+1); err != nil {
+		if err := uc.bundleRepo.AddCourse(ctx, bundle.ID, courseID, i+1); err != nil {
 			return nil, err
 		}
 	}
 
 	// Reload with courses
-	return uc.bundleRepo.GetByID(bundle.ID)
+	return uc.bundleRepo.GetByID(ctx, bundle.ID)
 }
 
 // GetBundleBySlug returns a bundle by slug
-func (uc *bundleUseCase) GetBundleBySlug(bundleSlug string) (*domain.Bundle, error) {
-	bundle, err := uc.bundleRepo.GetBySlug(bundleSlug)
+func (uc *bundleUseCase) GetBundleBySlug(ctx context.Context, bundleSlug string) (*domain.Bundle, error) {
+	bundle, err := uc.bundleRepo.GetBySlug(ctx, bundleSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -97,13 +100,13 @@ func (uc *bundleUseCase) GetBundleBySlug(bundleSlug string) (*domain.Bundle, err
 }
 
 // GetActiveBundles returns all active bundles
-func (uc *bundleUseCase) GetActiveBundles(page, limit int) ([]domain.Bundle, int64, error) {
-	return uc.bundleRepo.GetActive(page, limit)
+func (uc *bundleUseCase) GetActiveBundles(ctx context.Context, page, limit int) ([]domain.Bundle, int64, error) {
+	return uc.bundleRepo.GetActive(ctx, page, limit)
 }
 
 // UpdateBundle updates an existing bundle
-func (uc *bundleUseCase) UpdateBundle(bundle *domain.Bundle) error {
-	existing, err := uc.bundleRepo.GetByID(bundle.ID)
+func (uc *bundleUseCase) UpdateBundle(ctx context.Context, bundle *domain.Bundle) error {
+	existing, err := uc.bundleRepo.GetByID(ctx, bundle.ID)
 	if err != nil {
 		return errors.New("bundle not found")
 	}
@@ -119,22 +122,22 @@ func (uc *bundleUseCase) UpdateBundle(bundle *domain.Bundle) error {
 	existing.MaxPurchases = bundle.MaxPurchases
 	existing.UpdatedAt = time.Now()
 
-	return uc.bundleRepo.Update(existing)
+	return uc.bundleRepo.Update(ctx, existing)
 }
 
 // DeleteBundle deletes a bundle
-func (uc *bundleUseCase) DeleteBundle(id uuid.UUID) error {
-	return uc.bundleRepo.Delete(id)
+func (uc *bundleUseCase) DeleteBundle(ctx context.Context, id uuid.UUID) error {
+	return uc.bundleRepo.Delete(ctx, id)
 }
 
 // AddCourseToBundle adds a course to a bundle
-func (uc *bundleUseCase) AddCourseToBundle(bundleID, courseID uuid.UUID) error {
-	bundle, err := uc.bundleRepo.GetByID(bundleID)
+func (uc *bundleUseCase) AddCourseToBundle(ctx context.Context, bundleID, courseID uuid.UUID) error {
+	bundle, err := uc.bundleRepo.GetByID(ctx, bundleID)
 	if err != nil {
 		return errors.New("bundle not found")
 	}
 
-	course, err := uc.courseRepo.GetByID(courseID)
+	course, err := uc.courseRepo.GetByID(ctx, courseID)
 	if err != nil {
 		return errors.New("course not found")
 	}
@@ -147,22 +150,22 @@ func (uc *bundleUseCase) AddCourseToBundle(bundleID, courseID uuid.UUID) error {
 	bundle.OriginalPrice += price
 	bundle.BundlePrice = bundle.OriginalPrice * (1 - bundle.DiscountPercent/100)
 
-	if err := uc.bundleRepo.Update(bundle); err != nil {
+	if err := uc.bundleRepo.Update(ctx, bundle); err != nil {
 		return err
 	}
 
 	order := len(bundle.Courses) + 1
-	return uc.bundleRepo.AddCourse(bundleID, courseID, order)
+	return uc.bundleRepo.AddCourse(ctx, bundleID, courseID, order)
 }
 
 // RemoveCourseFromBundle removes a course from a bundle
-func (uc *bundleUseCase) RemoveCourseFromBundle(bundleID, courseID uuid.UUID) error {
-	bundle, err := uc.bundleRepo.GetByID(bundleID)
+func (uc *bundleUseCase) RemoveCourseFromBundle(ctx context.Context, bundleID, courseID uuid.UUID) error {
+	bundle, err := uc.bundleRepo.GetByID(ctx, bundleID)
 	if err != nil {
 		return errors.New("bundle not found")
 	}
 
-	course, err := uc.courseRepo.GetByID(courseID)
+	course, err := uc.courseRepo.GetByID(ctx, courseID)
 	if err != nil {
 		return errors.New("course not found")
 	}
@@ -178,18 +181,19 @@ func (uc *bundleUseCase) RemoveCourseFromBundle(bundleID, courseID uuid.UUID) er
 	}
 	bundle.BundlePrice = bundle.OriginalPrice * (1 - bundle.DiscountPercent/100)
 
-	if err := uc.bundleRepo.Update(bundle); err != nil {
+	if err := uc.bundleRepo.Update(ctx, bundle); err != nil {
 		return err
 	}
 
-	return uc.bundleRepo.RemoveCourse(bundleID, courseID)
+	return uc.bundleRepo.RemoveCourse(ctx, bundleID, courseID)
 }
 
 // PurchaseBundle purchases a bundle and enrolls user in all courses
 func (uc *bundleUseCase) PurchaseBundle(
+	ctx context.Context,
 	userID, bundleID uuid.UUID,
 ) (*domain.BundlePurchase, error) {
-	bundle, err := uc.bundleRepo.GetByID(bundleID)
+	bundle, err := uc.bundleRepo.GetByID(ctx, bundleID)
 	if err != nil {
 		return nil, errors.New("bundle not found")
 	}
@@ -199,7 +203,7 @@ func (uc *bundleUseCase) PurchaseBundle(
 	}
 
 	// Get bundle courses
-	courses, err := uc.bundleRepo.GetCourses(bundleID)
+	courses, err := uc.bundleRepo.GetCourses(ctx, bundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +218,7 @@ func (uc *bundleUseCase) PurchaseBundle(
 		Status:      domain.OrderStatusCompleted,
 	}
 
-	if err := uc.orderRepo.Create(order); err != nil {
+	if err := uc.orderRepo.Create(ctx, order); err != nil {
 		return nil, err
 	}
 
@@ -224,7 +228,7 @@ func (uc *bundleUseCase) PurchaseBundle(
 			UserID:   userID,
 			CourseID: course.ID,
 		}
-		uc.enrollmentRepo.Create(enrollment)
+		uc.enrollmentRepo.Create(ctx, enrollment)
 	}
 
 	// Record purchase
@@ -235,29 +239,30 @@ func (uc *bundleUseCase) PurchaseBundle(
 		Price:    bundle.BundlePrice,
 	}
 
-	if err := uc.bundleRepo.RecordPurchase(purchase); err != nil {
+	if err := uc.bundleRepo.RecordPurchase(ctx, purchase); err != nil {
 		return nil, err
 	}
 
 	// Increment purchase count
-	uc.bundleRepo.IncrementPurchaseCount(bundleID)
+	uc.bundleRepo.IncrementPurchaseCount(ctx, bundleID)
 
 	purchase.Bundle = bundle
 	return purchase, nil
 }
 
 // GetUserBundles returns user's purchased bundles
-func (uc *bundleUseCase) GetUserBundles(userID uuid.UUID) ([]domain.BundlePurchase, error) {
-	return uc.bundleRepo.GetUserPurchases(userID)
+func (uc *bundleUseCase) GetUserBundles(ctx context.Context, userID uuid.UUID) ([]domain.BundlePurchase, error) {
+	return uc.bundleRepo.GetUserPurchases(ctx, userID)
 }
 
 // CalculateBundlePrice calculates bundle pricing
 func (uc *bundleUseCase) CalculateBundlePrice(
+	ctx context.Context,
 	courseIDs []uuid.UUID,
 	discountPercent float64,
 ) (original, discounted float64, err error) {
 	for _, courseID := range courseIDs {
-		course, err := uc.courseRepo.GetByID(courseID)
+		course, err := uc.courseRepo.GetByID(ctx, courseID)
 		if err != nil {
 			return 0, 0, errors.New("course not found")
 		}

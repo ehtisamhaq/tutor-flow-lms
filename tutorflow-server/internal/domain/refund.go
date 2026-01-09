@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,26 +59,15 @@ func (r *Refund) CanProcess() bool {
 	return r.Status == RefundStatusPending
 }
 
-// RefundRepository interface
-type RefundRepository interface {
-	Create(refund *Refund) error
-	GetByID(id uuid.UUID) (*Refund, error)
-	GetByOrderID(orderID uuid.UUID) (*Refund, error)
-	GetByUserID(userID uuid.UUID, page, limit int) ([]Refund, int64, error)
-	GetPending(page, limit int) ([]Refund, int64, error)
-	GetAll(status *RefundStatus, page, limit int) ([]Refund, int64, error)
-	Update(refund *Refund) error
-}
-
 // RefundUseCase interface
 type RefundUseCase interface {
-	RequestRefund(userID, orderID uuid.UUID, reason RefundReason, description string) (*Refund, error)
-	ApproveRefund(refundID, adminID uuid.UUID, notes string) (*Refund, error)
-	RejectRefund(refundID, adminID uuid.UUID, notes string) (*Refund, error)
-	GetUserRefunds(userID uuid.UUID, page, limit int) ([]Refund, int64, error)
-	GetPendingRefunds(page, limit int) ([]Refund, int64, error)
-	GetAllRefunds(status *RefundStatus, page, limit int) ([]Refund, int64, error)
-	GetRefundByID(id uuid.UUID) (*Refund, error)
+	RequestRefund(ctx context.Context, userID, orderID uuid.UUID, reason RefundReason, description string) (*Refund, error)
+	ApproveRefund(ctx context.Context, refundID, adminID uuid.UUID, notes string) (*Refund, error)
+	RejectRefund(ctx context.Context, refundID, adminID uuid.UUID, notes string) (*Refund, error)
+	GetUserRefunds(ctx context.Context, userID uuid.UUID, page, limit int) ([]Refund, int64, error)
+	GetPendingRefunds(ctx context.Context, page, limit int) ([]Refund, int64, error)
+	GetAllRefunds(ctx context.Context, status *RefundStatus, page, limit int) ([]Refund, int64, error)
+	GetRefundByID(ctx context.Context, id uuid.UUID) (*Refund, error)
 }
 
 // RefundPolicy represents refund rules

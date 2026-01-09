@@ -11,6 +11,8 @@ import {
   User,
   LogOut,
   ShoppingCart,
+  ClipboardCheck,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
@@ -36,6 +38,16 @@ export default async function DashboardLayout({
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/my-courses", label: "My Courses", icon: BookOpen },
+    {
+      href: "/dashboard/peer-reviews",
+      label: "Peer Reviews",
+      icon: ClipboardCheck,
+    },
+    {
+      href: "/dashboard/subscription",
+      label: "Subscription",
+      icon: CreditCard,
+    },
     { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },

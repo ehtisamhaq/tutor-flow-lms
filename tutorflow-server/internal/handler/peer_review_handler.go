@@ -75,7 +75,7 @@ func (h *PeerReviewHandler) ConfigurePeerReview(c echo.Context) error {
 		MinFeedbackLength: req.MinFeedbackLength,
 	}
 
-	if err := h.peerReviewUC.ConfigurePeerReview(lessonID, config); err != nil {
+	if err := h.peerReviewUC.ConfigurePeerReview(c.Request().Context(), lessonID, config); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -98,7 +98,7 @@ func (h *PeerReviewHandler) GetConfig(c echo.Context) error {
 		})
 	}
 
-	config, err := h.peerReviewUC.GetPeerReviewConfig(lessonID)
+	config, err := h.peerReviewUC.GetPeerReviewConfig(c.Request().Context(), lessonID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -148,7 +148,7 @@ func (h *PeerReviewHandler) AddCriteria(c echo.Context) error {
 		Order:       req.Order,
 	}
 
-	if err := h.peerReviewUC.AddCriteria(lessonID, criteria); err != nil {
+	if err := h.peerReviewUC.AddCriteria(c.Request().Context(), lessonID, criteria); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -188,7 +188,7 @@ func (h *PeerReviewHandler) UpdateCriteria(c echo.Context) error {
 		Order:       req.Order,
 	}
 
-	if err := h.peerReviewUC.UpdateCriteria(criteria); err != nil {
+	if err := h.peerReviewUC.UpdateCriteria(c.Request().Context(), criteria); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -211,7 +211,7 @@ func (h *PeerReviewHandler) DeleteCriteria(c echo.Context) error {
 		})
 	}
 
-	if err := h.peerReviewUC.RemoveCriteria(id); err != nil {
+	if err := h.peerReviewUC.RemoveCriteria(c.Request().Context(), id); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -228,7 +228,7 @@ func (h *PeerReviewHandler) DeleteCriteria(c echo.Context) error {
 func (h *PeerReviewHandler) GetMyAssignments(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	assignments, err := h.peerReviewUC.GetMyReviewAssignments(userID)
+	assignments, err := h.peerReviewUC.GetMyReviewAssignments(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -253,7 +253,7 @@ func (h *PeerReviewHandler) GetReviewsForMySubmission(c echo.Context) error {
 		})
 	}
 
-	reviews, err := h.peerReviewUC.GetReviewsForMySubmission(userID, lessonID)
+	reviews, err := h.peerReviewUC.GetReviewsForMySubmission(c.Request().Context(), userID, lessonID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -313,7 +313,7 @@ func (h *PeerReviewHandler) SubmitReview(c echo.Context) error {
 		}
 	}
 
-	if err := h.peerReviewUC.SubmitReview(assignmentID, review, scores); err != nil {
+	if err := h.peerReviewUC.SubmitReview(c.Request().Context(), assignmentID, review, scores); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -349,7 +349,7 @@ func (h *PeerReviewHandler) DisputeReview(c echo.Context) error {
 		})
 	}
 
-	if err := h.peerReviewUC.DisputeReview(reviewID, req.Reason); err != nil {
+	if err := h.peerReviewUC.DisputeReview(c.Request().Context(), reviewID, req.Reason); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},

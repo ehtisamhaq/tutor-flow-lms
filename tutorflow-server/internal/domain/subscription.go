@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -95,37 +96,38 @@ func (s *Subscription) DaysRemaining() int {
 }
 
 // SubscriptionRepository interface
+// SubscriptionRepository interface
 type SubscriptionRepository interface {
 	// Plans
-	CreatePlan(plan *SubscriptionPlan) error
-	GetPlanByID(id uuid.UUID) (*SubscriptionPlan, error)
-	GetPlanBySlug(slug string) (*SubscriptionPlan, error)
-	GetActivePlans() ([]SubscriptionPlan, error)
-	UpdatePlan(plan *SubscriptionPlan) error
+	CreatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	GetPlanByID(ctx context.Context, id uuid.UUID) (*SubscriptionPlan, error)
+	GetPlanBySlug(ctx context.Context, slug string) (*SubscriptionPlan, error)
+	GetActivePlans(ctx context.Context) ([]SubscriptionPlan, error)
+	UpdatePlan(ctx context.Context, plan *SubscriptionPlan) error
 
 	// Subscriptions
-	Create(subscription *Subscription) error
-	GetByID(id uuid.UUID) (*Subscription, error)
-	GetByUserID(userID uuid.UUID) (*Subscription, error)
-	GetActiveByUserID(userID uuid.UUID) (*Subscription, error)
-	Update(subscription *Subscription) error
-	Cancel(id uuid.UUID) error
-	GetExpiringSubscriptions(days int) ([]Subscription, error)
+	Create(ctx context.Context, subscription *Subscription) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Subscription, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*Subscription, error)
+	GetActiveByUserID(ctx context.Context, userID uuid.UUID) (*Subscription, error)
+	Update(ctx context.Context, subscription *Subscription) error
+	Cancel(ctx context.Context, id uuid.UUID) error
+	GetExpiringSubscriptions(ctx context.Context, days int) ([]Subscription, error)
 }
 
 // SubscriptionUseCase interface
 type SubscriptionUseCase interface {
 	// Plans
-	CreatePlan(plan *SubscriptionPlan) error
-	GetPlans() ([]SubscriptionPlan, error)
-	GetPlanBySlug(slug string) (*SubscriptionPlan, error)
-	UpdatePlan(plan *SubscriptionPlan) error
+	CreatePlan(ctx context.Context, plan *SubscriptionPlan) error
+	GetPlans(ctx context.Context) ([]SubscriptionPlan, error)
+	GetPlanBySlug(ctx context.Context, slug string) (*SubscriptionPlan, error)
+	UpdatePlan(ctx context.Context, plan *SubscriptionPlan) error
 
 	// Subscriptions
-	Subscribe(userID uuid.UUID, planSlug string, interval SubscriptionInterval) (*Subscription, error)
-	GetUserSubscription(userID uuid.UUID) (*Subscription, error)
-	CancelSubscription(userID uuid.UUID) error
-	ResumeSubscription(userID uuid.UUID) error
-	ChangeSubscription(userID uuid.UUID, newPlanSlug string) (*Subscription, error)
-	HandleWebhook(event string, data map[string]interface{}) error
+	Subscribe(ctx context.Context, userID uuid.UUID, planSlug string, interval SubscriptionInterval) (*Subscription, error)
+	GetUserSubscription(ctx context.Context, userID uuid.UUID) (*Subscription, error)
+	CancelSubscription(ctx context.Context, userID uuid.UUID) error
+	ResumeSubscription(ctx context.Context, userID uuid.UUID) error
+	ChangeSubscription(ctx context.Context, userID uuid.UUID, newPlanSlug string) (*Subscription, error)
+	HandleWebhook(ctx context.Context, event string, data map[string]interface{}) error
 }

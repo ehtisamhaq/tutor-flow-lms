@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -91,33 +92,16 @@ type BundlePurchase struct {
 	Order  *Order  `gorm:"foreignKey:OrderID" json:"order,omitempty"`
 }
 
-// BundleRepository interface
-type BundleRepository interface {
-	Create(bundle *Bundle) error
-	GetByID(id uuid.UUID) (*Bundle, error)
-	GetBySlug(slug string) (*Bundle, error)
-	GetActive(page, limit int) ([]Bundle, int64, error)
-	GetByCategory(categoryID uuid.UUID) ([]Bundle, error)
-	Update(bundle *Bundle) error
-	Delete(id uuid.UUID) error
-	AddCourse(bundleID, courseID uuid.UUID, order int) error
-	RemoveCourse(bundleID, courseID uuid.UUID) error
-	GetCourses(bundleID uuid.UUID) ([]Course, error)
-	RecordPurchase(purchase *BundlePurchase) error
-	GetUserPurchases(userID uuid.UUID) ([]BundlePurchase, error)
-	IncrementPurchaseCount(bundleID uuid.UUID) error
-}
-
 // BundleUseCase interface
 type BundleUseCase interface {
-	CreateBundle(bundle *Bundle, courseIDs []uuid.UUID) (*Bundle, error)
-	GetBundleBySlug(slug string) (*Bundle, error)
-	GetActiveBundles(page, limit int) ([]Bundle, int64, error)
-	UpdateBundle(bundle *Bundle) error
-	DeleteBundle(id uuid.UUID) error
-	AddCourseToBundle(bundleID, courseID uuid.UUID) error
-	RemoveCourseFromBundle(bundleID, courseID uuid.UUID) error
-	PurchaseBundle(userID, bundleID uuid.UUID) (*BundlePurchase, error)
-	GetUserBundles(userID uuid.UUID) ([]BundlePurchase, error)
-	CalculateBundlePrice(courseIDs []uuid.UUID, discountPercent float64) (original, discounted float64, err error)
+	CreateBundle(ctx context.Context, bundle *Bundle, courseIDs []uuid.UUID) (*Bundle, error)
+	GetBundleBySlug(ctx context.Context, slug string) (*Bundle, error)
+	GetActiveBundles(ctx context.Context, page, limit int) ([]Bundle, int64, error)
+	UpdateBundle(ctx context.Context, bundle *Bundle) error
+	DeleteBundle(ctx context.Context, id uuid.UUID) error
+	AddCourseToBundle(ctx context.Context, bundleID, courseID uuid.UUID) error
+	RemoveCourseFromBundle(ctx context.Context, bundleID, courseID uuid.UUID) error
+	PurchaseBundle(ctx context.Context, userID, bundleID uuid.UUID) (*BundlePurchase, error)
+	GetUserBundles(ctx context.Context, userID uuid.UUID) ([]BundlePurchase, error)
+	CalculateBundlePrice(ctx context.Context, courseIDs []uuid.UUID, discountPercent float64) (original, discounted float64, err error)
 }

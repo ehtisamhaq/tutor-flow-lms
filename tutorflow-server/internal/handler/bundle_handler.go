@@ -57,7 +57,7 @@ func (h *BundleHandler) GetActiveBundles(c echo.Context) error {
 		}
 	}
 
-	bundles, total, err := h.bundleUC.GetActiveBundles(page, limit)
+	bundles, total, err := h.bundleUC.GetActiveBundles(c.Request().Context(), page, limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -80,7 +80,7 @@ func (h *BundleHandler) GetActiveBundles(c echo.Context) error {
 func (h *BundleHandler) GetBundle(c echo.Context) error {
 	slug := c.Param("slug")
 
-	bundle, err := h.bundleUC.GetBundleBySlug(slug)
+	bundle, err := h.bundleUC.GetBundleBySlug(c.Request().Context(), slug)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"success": false,
@@ -130,7 +130,7 @@ func (h *BundleHandler) CreateBundle(c echo.Context) error {
 		IsActive:        true,
 	}
 
-	created, err := h.bundleUC.CreateBundle(bundle, req.CourseIDs)
+	created, err := h.bundleUC.CreateBundle(c.Request().Context(), bundle, req.CourseIDs)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -163,7 +163,7 @@ func (h *BundleHandler) UpdateBundle(c echo.Context) error {
 	}
 
 	bundle.ID = id
-	if err := h.bundleUC.UpdateBundle(&bundle); err != nil {
+	if err := h.bundleUC.UpdateBundle(c.Request().Context(), &bundle); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -186,7 +186,7 @@ func (h *BundleHandler) DeleteBundle(c echo.Context) error {
 		})
 	}
 
-	if err := h.bundleUC.DeleteBundle(id); err != nil {
+	if err := h.bundleUC.DeleteBundle(c.Request().Context(), id); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -222,7 +222,7 @@ func (h *BundleHandler) AddCourse(c echo.Context) error {
 		})
 	}
 
-	if err := h.bundleUC.AddCourseToBundle(bundleID, req.CourseID); err != nil {
+	if err := h.bundleUC.AddCourseToBundle(c.Request().Context(), bundleID, req.CourseID); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -253,7 +253,7 @@ func (h *BundleHandler) RemoveCourse(c echo.Context) error {
 		})
 	}
 
-	if err := h.bundleUC.RemoveCourseFromBundle(bundleID, courseID); err != nil {
+	if err := h.bundleUC.RemoveCourseFromBundle(c.Request().Context(), bundleID, courseID); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -278,7 +278,7 @@ func (h *BundleHandler) PurchaseBundle(c echo.Context) error {
 
 	userID := getUserIDFromContext(c)
 
-	purchase, err := h.bundleUC.PurchaseBundle(userID, bundleID)
+	purchase, err := h.bundleUC.PurchaseBundle(c.Request().Context(), userID, bundleID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -296,7 +296,7 @@ func (h *BundleHandler) PurchaseBundle(c echo.Context) error {
 func (h *BundleHandler) GetMyBundles(c echo.Context) error {
 	userID := getUserIDFromContext(c)
 
-	purchases, err := h.bundleUC.GetUserBundles(userID)
+	purchases, err := h.bundleUC.GetUserBundles(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
