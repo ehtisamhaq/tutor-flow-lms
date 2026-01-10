@@ -140,6 +140,10 @@ func (r *moduleRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.Module{}, "id = ?", id).Error
 }
 
+func (r *moduleRepository) DeleteByCourse(ctx context.Context, courseID uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.Module{}, "course_id = ?", courseID).Error
+}
+
 func (r *moduleRepository) GetByCourse(ctx context.Context, courseID uuid.UUID) ([]domain.Module, error) {
 	var modules []domain.Module
 	err := r.db.WithContext(ctx).
@@ -193,6 +197,10 @@ func (r *lessonRepository) Update(ctx context.Context, lesson *domain.Lesson) er
 
 func (r *lessonRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.Lesson{}, "id = ?", id).Error
+}
+
+func (r *lessonRepository) DeleteByModule(ctx context.Context, moduleID uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.Lesson{}, "module_id = ?", moduleID).Error
 }
 
 func (r *lessonRepository) GetByModule(ctx context.Context, moduleID uuid.UUID) ([]domain.Lesson, error) {

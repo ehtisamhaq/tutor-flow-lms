@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -147,13 +148,32 @@ type Submission struct {
 	Grader     *User       `gorm:"foreignKey:GradedBy" json:"grader,omitempty"`
 }
 
-func (s *Submission) IsGraded() bool {
-	return s.Status == SubmissionStatusGraded
-}
+// AssessmentUseCase interface
+type AssessmentUseCase interface {
+	// Quiz
+	GetQuiz(ctx context.Context, id uuid.UUID) (*Quiz, error)
+	GetQuizByLesson(ctx context.Context, lessonID uuid.UUID) (*Quiz, error)
+	CreateQuiz(ctx context.Context, quiz *Quiz) error
+	UpdateQuiz(ctx context.Context, quiz *Quiz) error
+	DeleteQuiz(ctx context.Context, id uuid.UUID) error
 
-func (s *Submission) IsLate(assignment *Assignment) bool {
-	if assignment.DueDate == nil || s.SubmittedAt == nil {
-		return false
-	}
-	return s.SubmittedAt.After(*assignment.DueDate)
+	// Quiz Attempts
+	StartAttempt(ctx context.Context, userID, quizID uuid.UUID) (*QuizAttempt, error)
+	SubmitAttempt(ctx context.Context, attemptID uuid.UUID, answers string) (*QuizAttempt, error)
+	GetAttempt(ctx context.Context, id uuid.UUID) (*QuizAttempt, error)
+	GetMyAttempts(ctx context.Context, userID, quizID uuid.UUID) ([]QuizAttempt, error)
+
+	// Assignments
+	GetAssignment(ctx context.Context, id uuid.UUID) (*Assignment, error)
+	GetAssignmentByLesson(ctx context.Context, lessonID uuid.UUID) (*Assignment, error)
+	CreateAssignment(ctx context.Context, assignment *Assignment) error
+	UpdateAssignment(ctx context.Context, assignment *Assignment) error
+	DeleteAssignment(ctx context.Context, id uuid.UUID) error
+
+	// Submissions
+	SubmitAssignment(ctx context.Context, userID uuid.UUID, assignmentID uuid.UUID, content, fileURL, fileName *string) (*Submission, error)
+	GetSubmission(ctx context.Context, id uuid.UUID) (*Submission, error)
+	GetMySubmission(ctx context.Context, userID, assignmentID uuid.UUID) (*Submission, error)
+	GetSubmissionsByAssignment(ctx context.Context, assignmentID uuid.UUID, page, limit int) ([]Submission, int64, error)
+	GradeSubmission(ctx context.Context, submissionID uuid.UUID, graderID uuid.UUID, score float64, feedback *string) (*Submission, error)
 }

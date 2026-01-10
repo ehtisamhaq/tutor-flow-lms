@@ -55,6 +55,9 @@ func (r *courseRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.C
 		Preload("Modules", func(db *gorm.DB) *gorm.DB {
 			return db.Order("sort_order ASC")
 		}).
+		Preload("Modules.Lessons", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order ASC")
+		}).
 		Where("id = ?", id).
 		First(&course).Error
 
@@ -72,6 +75,12 @@ func (r *courseRepository) GetBySlug(ctx context.Context, slug string) (*domain.
 	err := r.db.WithContext(ctx).
 		Preload("Instructor").
 		Preload("Categories").
+		Preload("Modules", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order ASC")
+		}).
+		Preload("Modules.Lessons", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order ASC")
+		}).
 		Where("slug = ?", slug).
 		First(&course).Error
 

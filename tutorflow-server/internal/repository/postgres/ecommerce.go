@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -332,4 +333,109 @@ func (r *orderRepository) GetByPaymentIntent(ctx context.Context, paymentIntentI
 		return nil, err
 	}
 	return &order, nil
+}
+
+// EarningRepository
+type earningRepository struct {
+	db *gorm.DB
+}
+
+func NewEarningRepository(db *gorm.DB) repository.EarningRepository {
+	return &earningRepository{db: db}
+}
+
+func (r *earningRepository) Create(ctx context.Context, earning *domain.InstructorEarning) error {
+	return r.db.WithContext(ctx).Create(earning).Error
+}
+
+func (r *earningRepository) GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]domain.InstructorEarning, int64, error) {
+	var earnings []domain.InstructorEarning
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&domain.InstructorEarning{}).Where("instructor_id = ?", instructorID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&earnings).Error
+	return earnings, total, err
+}
+
+func (r *earningRepository) GetStats(ctx context.Context, instructorID uuid.UUID) (*domain.InstructorStats, error) {
+	var stats domain.InstructorStats
+
+	// Calculate Total Earnings
+	r.db.WithContext(ctx).Model(&domain.InstructorEarning{}).
+		Where("instructor_id = ?", instructorID).
+		Select("SUM(amount)").Scan(&stats.TotalEarnings)
+
+	// Calculate Pending Earnings
+	r.db.WithContext(ctx).Model(&domain.InstructorEarning{}).
+		Where("instructor_id = ? AND status = ?", instructorID, "pending").
+		Select("SUM(amount)").Scan(&stats.PendingEarnings)
+
+	// Calculate Available Earnings
+	r.db.WithContext(ctx).Model(&domain.InstructorEarning{}).
+		Where("instructor_id = ? AND status = ?", instructorID, "available").
+		Select("SUM(amount)").Scan(&stats.AvailableEarnings)
+
+	// Calculate Withdrawn Amount
+	r.db.WithContext(ctx).Model(&domain.Payout{}).
+		Where("instructor_id = ? AND status = ?", instructorID, "processed").
+		Select("SUM(amount)").Scan(&stats.WithdrawnAmount)
+
+	return &stats, nil
+}
+
+func (r *earningRepository) UpdateStatus(ctx context.Context, instructorID uuid.UUID, fromStatus, toStatus string) error {
+	return r.db.WithContext(ctx).Model(&domain.InstructorEarning{}).
+		Where("instructor_id = ? AND status = ?", instructorID, fromStatus).
+		Update("status", toStatus).Error
+}
+
+// PayoutRepository
+type payoutRepository struct {
+	db *gorm.DB
+}
+
+func NewPayoutRepository(db *gorm.DB) repository.PayoutRepository {
+	return &payoutRepository{db: db}
+}
+
+func (r *payoutRepository) Create(ctx context.Context, payout *domain.Payout) error {
+	return r.db.WithContext(ctx).Create(payout).Error
+}
+
+func (r *payoutRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Payout, error) {
+	var payout domain.Payout
+	if err := r.db.WithContext(ctx).First(&payout, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &payout, nil
+}
+
+func (r *payoutRepository) GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]domain.Payout, int64, error) {
+	var payouts []domain.Payout
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&domain.Payout{}).Where("instructor_id = ?", instructorID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&payouts).Error
+	return payouts, total, err
+}
+
+func (r *payoutRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
+	now := time.Now()
+	update := map[string]interface{}{
+		"status": status,
+	}
+	if status == "processed" {
+		update["processed_at"] = &now
+	}
+	return r.db.WithContext(ctx).Model(&domain.Payout{}).Where("id = ?", id).Updates(update).Error
 }

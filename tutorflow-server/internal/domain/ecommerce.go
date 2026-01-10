@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -217,10 +218,82 @@ type Payout struct {
 
 // OrderRepository interface
 type OrderRepository interface {
-	Create(order *Order) error
-	GetByID(id uuid.UUID) (*Order, error)
-	GetByUserID(userID uuid.UUID, page, limit int) ([]Order, int64, error)
-	GetByOrderNumber(orderNumber string) (*Order, error)
-	Update(order *Order) error
-	GetAll(status *OrderStatus, page, limit int) ([]Order, int64, error)
+	Create(ctx context.Context, order *Order) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID, page, limit int) ([]Order, int64, error)
+	GetByOrderNumber(ctx context.Context, orderNumber string) (*Order, error)
+	GetAll(ctx context.Context, status *OrderStatus, page, limit int) ([]Order, int64, error)
+	GetByPaymentIntent(ctx context.Context, paymentIntentID string) (*Order, error)
+	Update(ctx context.Context, order *Order) error
+}
+
+// EarningRepository interface
+type EarningRepository interface {
+	Create(ctx context.Context, earning *InstructorEarning) error
+	GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]InstructorEarning, int64, error)
+	GetStats(ctx context.Context, instructorID uuid.UUID) (*InstructorStats, error)
+	UpdateStatus(ctx context.Context, instructorID uuid.UUID, fromStatus, toStatus string) error
+}
+
+// PayoutRepository interface
+type PayoutRepository interface {
+	Create(ctx context.Context, payout *Payout) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Payout, error)
+	GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]Payout, int64, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
+}
+
+// InstructorStats for earning overview
+type InstructorStats struct {
+	TotalEarnings     float64 `json:"total_earnings"`
+	AvailableEarnings float64 `json:"available_earnings"`
+	PendingEarnings   float64 `json:"pending_earnings"`
+	WithdrawnAmount   float64 `json:"withdrawn_amount"`
+}
+
+// RevenueUseCase interface
+type RevenueUseCase interface {
+	GetInstructorStats(ctx context.Context, instructorID uuid.UUID) (*InstructorStats, error)
+	GetEarnings(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]InstructorEarning, int64, error)
+	GetPayouts(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]Payout, int64, error)
+	RequestPayout(ctx context.Context, instructorID uuid.UUID, amount float64) (*Payout, error)
+	HandlePaymentSuccess(ctx context.Context, order *Order) error
+}
+
+// OrderUseCase interface
+type OrderUseCase interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
+	GetByOrderNumber(ctx context.Context, orderNumber string) (*Order, error)
+	GetMyOrders(ctx context.Context, userID uuid.UUID, page, limit int) ([]Order, int64, error)
+	CreateOrder(ctx context.Context, userID uuid.UUID, email string, input CreateOrderInput) (*CreateOrderOutput, error)
+	CreateCheckout(ctx context.Context, userID uuid.UUID, email string, input CreateOrderInput) (*CreateOrderOutput, error)
+	ConfirmPayment(ctx context.Context, paymentIntentID string) (*Order, error)
+	HandleWebhook(ctx context.Context, eventType string, paymentIntentID string) error
+	ValidateCoupon(ctx context.Context, code string, subtotal float64) (*Coupon, float64, error)
+	ListCoupons(ctx context.Context, page, limit int) ([]Coupon, int64, error)
+	CreateCoupon(ctx context.Context, input CreateCouponInput, createdBy uuid.UUID) (*Coupon, error)
+	DeleteCoupon(ctx context.Context, id uuid.UUID) error
+	ToggleCoupon(ctx context.Context, id uuid.UUID, isActive bool) error
+}
+
+// These inputs/outputs should ideally be in domain as well if shared
+type CreateOrderInput struct {
+	CouponCode *string `json:"coupon_code"`
+}
+
+type CreateOrderOutput struct {
+	Order           *Order `json:"order"`
+	CheckoutURL     string `json:"checkout_url,omitempty"`
+	ClientSecret    string `json:"client_secret,omitempty"`
+	PaymentIntentID string `json:"payment_intent_id,omitempty"`
+}
+
+type CreateCouponInput struct {
+	Code        string     `json:"code" validate:"required,min=3,max=50"`
+	CouponType  CouponType `json:"coupon_type" validate:"required,oneof=percentage fixed free"`
+	Value       float64    `json:"value" validate:"required,gte=0"`
+	MinPurchase float64    `json:"min_purchase"`
+	MaxDiscount *float64   `json:"max_discount"`
+	UsageLimit  *int       `json:"usage_limit"`
+	ExpiresAt   *time.Time `json:"expires_at"`
 }

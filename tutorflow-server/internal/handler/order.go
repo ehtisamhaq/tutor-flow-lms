@@ -14,17 +14,16 @@ import (
 	"github.com/tutorflow/tutorflow-server/internal/pkg/response"
 	"github.com/tutorflow/tutorflow-server/internal/pkg/validator"
 	"github.com/tutorflow/tutorflow-server/internal/service/payment"
-	"github.com/tutorflow/tutorflow-server/internal/usecase/order"
 )
 
 // OrderHandler handles order HTTP requests
 type OrderHandler struct {
-	orderUC    *order.UseCase
+	orderUC    domain.OrderUseCase
 	paymentSvc *payment.Service
 }
 
 // NewOrderHandler creates a new order handler
-func NewOrderHandler(orderUC *order.UseCase, paymentSvc *payment.Service) *OrderHandler {
+func NewOrderHandler(orderUC domain.OrderUseCase, paymentSvc *payment.Service) *OrderHandler {
 	return &OrderHandler{
 		orderUC:    orderUC,
 		paymentSvc: paymentSvc,
@@ -36,6 +35,7 @@ func (h *OrderHandler) RegisterRoutes(g *echo.Group, authMW, adminMW echo.Middle
 	// Order routes
 	g.GET("/my", h.MyOrders, authMW)
 	g.POST("", h.CreateOrder, authMW)
+	g.POST("/checkout", h.CreateCheckout, authMW)
 	g.GET("/:id", h.GetOrder, authMW)
 	g.POST("/confirm", h.ConfirmPayment, authMW)
 
@@ -81,12 +81,37 @@ func (h *OrderHandler) MyOrders(c echo.Context) error {
 func (h *OrderHandler) CreateOrder(c echo.Context) error {
 	claims, _ := middleware.GetClaims(c)
 
-	var input order.CreateOrderInput
+	var input domain.CreateOrderInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}
 
 	output, err := h.orderUC.CreateOrder(c.Request().Context(), claims.UserID, claims.Email, input)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Created(c, output)
+}
+
+// CreateCheckout godoc
+// @Summary Create checkout session from cart
+// @Tags Orders
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body order.CreateOrderInput true "Order data"
+// @Success 201 {object} response.Response{data=order.CreateOrderOutput}
+// @Router /orders/checkout [post]
+func (h *OrderHandler) CreateCheckout(c echo.Context) error {
+	claims, _ := middleware.GetClaims(c)
+
+	var input domain.CreateOrderInput
+	if err := c.Bind(&input); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	output, err := h.orderUC.CreateCheckout(c.Request().Context(), claims.UserID, claims.Email, input)
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}
@@ -259,7 +284,7 @@ func (h *OrderHandler) ListCoupons(c echo.Context) error {
 func (h *OrderHandler) CreateCoupon(c echo.Context) error {
 	claims, _ := middleware.GetClaims(c)
 
-	var input order.CreateCouponInput
+	var input domain.CreateCouponInput
 	if err := c.Bind(&input); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}

@@ -92,6 +92,7 @@ type ModuleRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Module, error)
 	Update(ctx context.Context, module *domain.Module) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteByCourse(ctx context.Context, courseID uuid.UUID) error
 	GetByCourse(ctx context.Context, courseID uuid.UUID) ([]domain.Module, error)
 	Reorder(ctx context.Context, courseID uuid.UUID, moduleIDs []uuid.UUID) error
 }
@@ -102,6 +103,7 @@ type LessonRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Lesson, error)
 	Update(ctx context.Context, lesson *domain.Lesson) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteByModule(ctx context.Context, moduleID uuid.UUID) error
 	GetByModule(ctx context.Context, moduleID uuid.UUID) ([]domain.Lesson, error)
 	Reorder(ctx context.Context, moduleID uuid.UUID, lessonIDs []uuid.UUID) error
 }
@@ -143,6 +145,22 @@ type OrderRepository interface {
 	Update(ctx context.Context, order *domain.Order) error
 	GetByUser(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.Order, int64, error)
 	GetByPaymentIntent(ctx context.Context, paymentIntentID string) (*domain.Order, error)
+}
+
+// EarningRepository interface
+type EarningRepository interface {
+	Create(ctx context.Context, earning *domain.InstructorEarning) error
+	GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]domain.InstructorEarning, int64, error)
+	GetStats(ctx context.Context, instructorID uuid.UUID) (*domain.InstructorStats, error)
+	UpdateStatus(ctx context.Context, instructorID uuid.UUID, fromStatus, toStatus string) error
+}
+
+// PayoutRepository interface
+type PayoutRepository interface {
+	Create(ctx context.Context, payout *domain.Payout) error
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Payout, error)
+	GetByInstructor(ctx context.Context, instructorID uuid.UUID, page, limit int) ([]domain.Payout, int64, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
 // CartRepository interface

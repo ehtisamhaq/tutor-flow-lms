@@ -1,8 +1,19 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+
+	"strconv"
+	"strings"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
 	"github.com/tutorflow/tutorflow-server/internal/middleware"
@@ -156,9 +167,111 @@ func (h *CourseHandler) GetCurriculum(c echo.Context) error {
 func (h *CourseHandler) Create(c echo.Context) error {
 	claims, _ := middleware.GetClaims(c)
 
+	f, _ := os.OpenFile("/tmp/course_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if f != nil {
+		defer f.Close()
+		fmt.Fprintf(f, "\n--- Create Course Request Received %v ---\n", time.Now())
+		fmt.Fprintf(f, "Content-Type: %s\n", c.Request().Header.Get(echo.HeaderContentType))
+		fmt.Fprintf(f, "Headers: %+v\n", c.Request().Header)
+
+		if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
+			fmt.Fprintf(f, "ParseMultipartForm error: %v\n", err)
+		}
+
+		fmt.Fprintf(f, "Form Keys: ")
+		for k := range c.Request().Form {
+			fmt.Fprintf(f, "%s, ", k)
+		}
+		fmt.Fprintln(f)
+
+		if c.Request().MultipartForm != nil {
+			fmt.Fprintf(f, "Multipart Form Keys: ")
+			for k := range c.Request().MultipartForm.Value {
+				fmt.Fprintf(f, "%s, ", k)
+			}
+			fmt.Fprintln(f)
+		}
+	}
+
+	if c.Request().MultipartForm != nil {
+		fmt.Printf("Multipart Form Keys: ")
+		for k := range c.Request().MultipartForm.Value {
+			fmt.Printf("%s, ", k)
+		}
+		fmt.Println()
+	}
+
 	var input course.CreateInput
-	if err := c.Bind(&input); err != nil {
-		return response.BadRequest(c, "Invalid request body")
+
+	// Use c.FormValue which is reliable in Echo for both multipart and urlencoded
+	input.Title = c.FormValue("title")
+	input.Level = c.FormValue("level")
+	input.Language = c.FormValue("language")
+
+	if f != nil {
+		fmt.Fprintf(f, "Extracted values: title=%q, level=%q, language=%q\n", input.Title, input.Level, input.Language)
+	}
+	fmt.Printf("Extracted: title=%q, level=%q\n", input.Title, input.Level)
+
+	desc := c.FormValue("description")
+	if desc != "" {
+		input.Description = &desc
+	}
+
+	shortDesc := c.FormValue("short_description")
+	if shortDesc != "" {
+		input.ShortDescription = &shortDesc
+	}
+
+	if priceStr := c.FormValue("price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			input.Price = price
+		}
+	}
+
+	if discountPriceStr := c.FormValue("discount_price"); discountPriceStr != "" {
+		if discountPrice, err := strconv.ParseFloat(discountPriceStr, 64); err == nil {
+			input.DiscountPrice = &discountPrice
+		}
+	}
+
+	catID := c.FormValue("category_id")
+	if catID != "" {
+		input.CategoryID = &catID
+	}
+
+	// Parse slices from form
+	if c.Request().MultipartForm != nil {
+		input.Requirements = c.Request().MultipartForm.Value["requirements"]
+		input.WhatYouLearn = c.Request().MultipartForm.Value["what_you_learn"]
+		input.CategoryIDs = c.Request().MultipartForm.Value["category_ids"]
+	} else {
+		input.Requirements = c.Request().Form["requirements"]
+		input.WhatYouLearn = c.Request().Form["what_you_learn"]
+		input.CategoryIDs = c.Request().Form["category_ids"]
+	}
+
+	// Handle thumbnail upload
+	file, err := c.FormFile("thumbnail")
+	if err == nil {
+		thumbnailURL, err := h.uploadFile(file)
+		if err != nil {
+			return response.InternalError(c, "Failed to upload thumbnail")
+		}
+		input.ThumbnailURL = &thumbnailURL
+	}
+
+	// Parse modules JSON if provided in multipart form
+	if modulesJSON := c.FormValue("modules"); modulesJSON != "" {
+		if f != nil {
+			fmt.Fprintf(f, "Modules JSON: %s\n", modulesJSON)
+		}
+		if err := json.Unmarshal([]byte(modulesJSON), &input.Modules); err != nil {
+			if f != nil {
+				fmt.Fprintf(f, "Unmarshal modules error: %v\n", err)
+			}
+			return response.BadRequest(c, "Invalid modules JSON")
+		}
 	}
 
 	if err := validator.Validate(input); err != nil {
@@ -194,9 +307,103 @@ func (h *CourseHandler) Update(c echo.Context) error {
 		return err
 	}
 
+	f, _ := os.OpenFile("/tmp/course_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if f != nil {
+		defer f.Close()
+		fmt.Fprintf(f, "\n--- Update Course Request Received %v ID=%s ---\n", time.Now(), id)
+		fmt.Fprintf(f, "Content-Type: %s\n", c.Request().Header.Get(echo.HeaderContentType))
+
+		if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
+			fmt.Fprintf(f, "ParseMultipartForm error: %v\n", err)
+		}
+
+		fmt.Fprintf(f, "Form Keys: ")
+		for k := range c.Request().Form {
+			fmt.Fprintf(f, "%s, ", k)
+		}
+		fmt.Fprintln(f)
+	}
+
 	var input course.UpdateInput
-	if err := c.Bind(&input); err != nil {
-		return response.BadRequest(c, "Invalid request body")
+	contentType := c.Request().Header.Get(echo.HeaderContentType)
+
+	if strings.HasPrefix(contentType, echo.MIMEApplicationJSON) {
+		if err := c.Bind(&input); err != nil {
+			return response.BadRequest(c, "Invalid JSON body")
+		}
+	} else {
+		// Manual parsing fallback
+		if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
+			_ = c.Request().ParseForm()
+		}
+
+		title := c.Request().FormValue("title")
+		if title != "" {
+			input.Title = &title
+		}
+
+		level := c.Request().FormValue("level")
+		if level != "" {
+			input.Level = &level
+		}
+
+		language := c.Request().FormValue("language")
+		if language != "" {
+			input.Language = &language
+		}
+
+		description := c.Request().FormValue("description")
+		if description != "" {
+			input.Description = &description
+		}
+
+		shortDescription := c.Request().FormValue("short_description")
+		if shortDescription != "" {
+			input.ShortDescription = &shortDescription
+		}
+
+		if priceStr := c.Request().FormValue("price"); priceStr != "" {
+			if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+				input.Price = &price
+			}
+		}
+
+		if discountPriceStr := c.Request().FormValue("discount_price"); discountPriceStr != "" {
+			if discountPrice, err := strconv.ParseFloat(discountPriceStr, 64); err == nil {
+				input.DiscountPrice = &discountPrice
+			}
+		}
+
+		if c.Request().MultipartForm != nil {
+			input.Requirements = c.Request().MultipartForm.Value["requirements"]
+			input.WhatYouLearn = c.Request().MultipartForm.Value["what_you_learn"]
+		} else {
+			input.Requirements = c.Request().PostForm["requirements"]
+			input.WhatYouLearn = c.Request().PostForm["what_you_learn"]
+		}
+	}
+
+	// Handle thumbnail upload
+	file, err := c.FormFile("thumbnail")
+	if err == nil {
+		thumbnailURL, err := h.uploadFile(file)
+		if err != nil {
+			return response.InternalError(c, "Failed to upload thumbnail")
+		}
+		input.ThumbnailURL = &thumbnailURL
+	}
+
+	// Parse modules JSON
+	if modulesJSON := c.Request().FormValue("modules"); modulesJSON != "" {
+		if f != nil {
+			fmt.Fprintf(f, "Modules JSON: %s\n", modulesJSON)
+		}
+		if err := json.Unmarshal([]byte(modulesJSON), &input.Modules); err != nil {
+			if f != nil {
+				fmt.Fprintf(f, "Unmarshal modules error: %v\n", err)
+			}
+			return response.BadRequest(c, "Invalid modules JSON")
+		}
 	}
 
 	if err := validator.Validate(input); err != nil {
@@ -209,6 +416,41 @@ func (h *CourseHandler) Update(c echo.Context) error {
 	}
 
 	return response.Success(c, crs)
+}
+
+func (h *CourseHandler) uploadFile(header *multipart.FileHeader) (string, error) {
+	// Simple local file upload implementation
+	// Ensure directory exists
+	uploadDir := "uploads"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return "", err
+	}
+
+	// Generate filename
+	filename := fmt.Sprintf("%s%s", uuid.New().String(), filepath.Ext(header.Filename))
+	dstPath := filepath.Join(uploadDir, filename)
+
+	// Open source file
+	src, err := header.Open()
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+
+	// Create destination file
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+
+	// Copy content
+	if _, err = io.Copy(dst, src); err != nil {
+		return "", err
+	}
+
+	// Return URL (relative for simplicity in dev)
+	return fmt.Sprintf("/%s/%s", uploadDir, filename), nil
 }
 
 // Delete godoc

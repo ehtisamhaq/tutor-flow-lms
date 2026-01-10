@@ -62,21 +62,8 @@ func (uc *UseCase) GetMyOrders(ctx context.Context, userID uuid.UUID, page, limi
 	return uc.orderRepo.GetByUser(ctx, userID, page, limit)
 }
 
-// CreateOrderInput for creating order
-type CreateOrderInput struct {
-	CouponCode *string `json:"coupon_code"`
-}
-
-// CreateOrderOutput returned after order creation
-type CreateOrderOutput struct {
-	Order           *domain.Order `json:"order"`
-	CheckoutURL     string        `json:"checkout_url,omitempty"`
-	ClientSecret    string        `json:"client_secret,omitempty"`
-	PaymentIntentID string        `json:"payment_intent_id,omitempty"`
-}
-
 // CreateOrder creates an order from cart
-func (uc *UseCase) CreateOrder(ctx context.Context, userID uuid.UUID, email string, input CreateOrderInput) (*CreateOrderOutput, error) {
+func (uc *UseCase) CreateOrder(ctx context.Context, userID uuid.UUID, email string, input domain.CreateOrderInput) (*domain.CreateOrderOutput, error) {
 	// Get user's cart
 	cart, err := uc.cartRepo.GetOrCreate(ctx, &userID, nil)
 	if err != nil {
@@ -175,10 +162,118 @@ func (uc *UseCase) CreateOrder(ctx context.Context, userID uuid.UUID, email stri
 		return nil, err
 	}
 
-	return &CreateOrderOutput{
+	return &domain.CreateOrderOutput{
 		Order:           order,
 		ClientSecret:    pi.ClientSecret,
 		PaymentIntentID: pi.ID,
+	}, nil
+}
+
+// CreateCheckout creates a Stripe Checkout session from cart
+func (uc *UseCase) CreateCheckout(ctx context.Context, userID uuid.UUID, email string, input domain.CreateOrderInput) (*domain.CreateOrderOutput, error) {
+	// Get user's cart
+	cart, err := uc.cartRepo.GetOrCreate(ctx, &userID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cart.Items) == 0 {
+		return nil, fmt.Errorf("cart is empty")
+	}
+
+	// Calculate totals and prepare line items
+	var subtotal float64
+	var orderItems []domain.OrderItem
+	var lineItems []payment.LineItem
+
+	platformFeePercent := 0.30
+
+	for _, item := range cart.Items {
+		course, err := uc.courseRepo.GetByID(ctx, item.CourseID)
+		if err != nil {
+			continue
+		}
+
+		price := course.GetEffectivePrice()
+		instructorShare := price * (1 - platformFeePercent)
+
+		orderItems = append(orderItems, domain.OrderItem{
+			CourseID:        course.ID,
+			Price:           price,
+			InstructorShare: instructorShare,
+		})
+
+		imageURL := ""
+		if course.ThumbnailURL != nil {
+			imageURL = *course.ThumbnailURL
+		}
+
+		lineItems = append(lineItems, payment.LineItem{
+			Name:        course.Title,
+			Description: fmt.Sprintf("Course by %s", course.Instructor.FirstName),
+			Amount:      int64(price * 100),
+			Quantity:    1,
+			ImageURL:    imageURL,
+		})
+
+		subtotal += price
+	}
+
+	// Apply coupon
+	var discount float64
+	var couponID *uuid.UUID
+	if input.CouponCode != nil && *input.CouponCode != "" {
+		coupon, err := uc.couponRepo.GetByCode(ctx, *input.CouponCode)
+		if err == nil && coupon.IsValid() {
+			discount = coupon.CalculateDiscount(subtotal)
+			couponID = &coupon.ID
+		}
+	}
+
+	total := subtotal - discount
+
+	// Create order
+	order := &domain.Order{
+		OrderNumber: domain.GenerateOrderNumber(),
+		UserID:      userID,
+		Status:      domain.OrderStatusPending,
+		Subtotal:    subtotal,
+		Discount:    discount,
+		Total:       total,
+		CouponID:    couponID,
+		Items:       orderItems,
+	}
+
+	if err := uc.orderRepo.Create(ctx, order); err != nil {
+		return nil, err
+	}
+
+	// Handle free orders
+	if total == 0 {
+		return uc.completeOrder(ctx, order)
+	}
+
+	// Create Stripe Checkout session
+	session, err := uc.paymentSvc.CreateCheckoutSession(ctx, payment.CreateCheckoutSessionInput{
+		CustomerEmail: email,
+		OrderID:       order.ID.String(),
+		Items:         lineItems,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create checkout session: %w", err)
+	}
+
+	// Update order with payment intent if available (Stripe Checkout sessions might not have PI immediately or it's different)
+	// For now, we mainly need the checkout URL.
+	paymentMethod := domain.PaymentMethodStripe
+	order.PaymentMethod = &paymentMethod
+	if err := uc.orderRepo.Update(ctx, order); err != nil {
+		return nil, err
+	}
+
+	return &domain.CreateOrderOutput{
+		Order:       order,
+		CheckoutURL: session.URL,
 	}, nil
 }
 
@@ -210,7 +305,7 @@ func (uc *UseCase) ConfirmPayment(ctx context.Context, paymentIntentID string) (
 }
 
 // completeOrder marks order as complete and creates enrollments
-func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*CreateOrderOutput, error) {
+func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*domain.CreateOrderOutput, error) {
 	now := time.Now()
 	order.Status = domain.OrderStatusCompleted
 	order.PaidAt = &now
@@ -245,7 +340,7 @@ func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*Cre
 		_ = uc.couponRepo.IncrementUsage(ctx, *order.CouponID)
 	}
 
-	return &CreateOrderOutput{Order: order}, nil
+	return &domain.CreateOrderOutput{Order: order}, nil
 }
 
 // HandleWebhook handles Stripe webhook events
@@ -294,7 +389,7 @@ type CreateCouponInput struct {
 }
 
 // CreateCoupon creates a new coupon (admin)
-func (uc *UseCase) CreateCoupon(ctx context.Context, input CreateCouponInput, createdBy uuid.UUID) (*domain.Coupon, error) {
+func (uc *UseCase) CreateCoupon(ctx context.Context, input domain.CreateCouponInput, createdBy uuid.UUID) (*domain.Coupon, error) {
 	coupon := &domain.Coupon{
 		Code:        input.Code,
 		CouponType:  input.CouponType,

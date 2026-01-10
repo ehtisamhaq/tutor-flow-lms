@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -144,10 +145,18 @@ type ResourceInfo struct {
 
 // LessonRepository interface
 type LessonRepository interface {
-	Create(lesson *Lesson) error
-	GetByID(id uuid.UUID) (*Lesson, error)
-	GetByModuleID(moduleID uuid.UUID) ([]Lesson, error)
-	Update(lesson *Lesson) error
-	Delete(id uuid.UUID) error
-	Reorder(moduleID uuid.UUID, lessonIDs []uuid.UUID) error
+	Create(ctx context.Context, lesson *Lesson) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Lesson, error)
+	GetByModuleID(ctx context.Context, moduleID uuid.UUID) ([]Lesson, error)
+	Update(ctx context.Context, lesson *Lesson) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Reorder(ctx context.Context, moduleID uuid.UUID, lessonIDs []uuid.UUID) error
+}
+
+// ContentUseCase interface
+type ContentUseCase interface {
+	AddAttachment(ctx context.Context, lessonID uuid.UUID, attachment Attachment) error
+	RemoveAttachment(ctx context.Context, lessonID uuid.UUID, fileURL string) error
+	GetAttachments(ctx context.Context, lessonID uuid.UUID) ([]Attachment, error)
+	UpdateResourceInfo(ctx context.Context, lessonID uuid.UUID, info ResourceInfo) error
 }

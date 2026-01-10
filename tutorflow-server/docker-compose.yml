@@ -19,6 +19,15 @@ services:
       timeout: 5s
       retries: 5
 
+  dbgate:
+    image: dbgate/dbgate
+    container_name: tutorflow_dbgate
+    restart: always
+    ports:
+      - "8082:3000"
+    depends_on:
+      - postgres
+
   redis:
     image: redis:7-alpine
     container_name: tutorflow_redis

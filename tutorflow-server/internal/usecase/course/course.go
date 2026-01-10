@@ -2,7 +2,10 @@ package course
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
@@ -109,30 +112,61 @@ func (uc *UseCase) GetByInstructor(ctx context.Context, instructorID uuid.UUID, 
 
 // CreateInput for creating a course
 type CreateInput struct {
-	Title            string   `json:"title" validate:"required,min=5,max=255"`
-	Description      *string  `json:"description"`
-	ShortDescription *string  `json:"short_description" validate:"omitempty,max=500"`
-	Level            string   `json:"level" validate:"required,oneof=beginner intermediate advanced"`
-	Price            float64  `json:"price" validate:"gte=0"`
-	CategoryIDs      []string `json:"category_ids"`
-	Requirements     []string `json:"requirements"`
-	WhatYouLearn     []string `json:"what_you_learn"`
-	Language         string   `json:"language"`
+	Title            string        `json:"title" form:"title" validate:"required,min=5,max=255"`
+	Description      *string       `json:"description" form:"description"`
+	ShortDescription *string       `json:"short_description" form:"short_description" validate:"omitempty,max=500"`
+	ThumbnailURL     *string       `json:"thumbnail_url" form:"thumbnail_url"`
+	Level            string        `json:"level" form:"level" validate:"required,oneof=beginner intermediate advanced"`
+	Price            float64       `json:"price" form:"price" validate:"gte=0"`
+	DiscountPrice    *float64      `json:"discount_price" form:"discount_price" validate:"omitempty,gte=0"`
+	CategoryIDs      []string      `json:"category_ids" form:"category_ids"`
+	CategoryID       *string       `json:"-" form:"category_id"`
+	Requirements     []string      `json:"requirements" form:"requirements"`
+	WhatYouLearn     []string      `json:"what_you_learn" form:"what_you_learn"`
+	Language         string        `json:"language" form:"language"`
+	Modules          []ModuleInput `json:"modules" form:"-"`
+}
+
+type ModuleInput struct {
+	ID          string        `json:"id"`
+	Title       string        `json:"title" validate:"required,min=3"`
+	Description *string       `json:"description"`
+	Order       int           `json:"order"`
+	Lessons     []LessonInput `json:"lessons"`
+}
+
+type LessonInput struct {
+	ID              string  `json:"id"`
+	Title           string  `json:"title" validate:"required,min=3"`
+	Description     *string `json:"description"`
+	Content         *string `json:"content"`
+	Type            string  `json:"type" validate:"required,oneof=video text quiz assignment"`
+	Order           int     `json:"order"`
+	DurationMinutes int     `json:"duration_minutes"`
+	VideoURL        *string `json:"video_url"`
 }
 
 // Create creates a new course
 func (uc *UseCase) Create(ctx context.Context, instructorID uuid.UUID, input CreateInput) (*domain.Course, error) {
 	courseSlug := slug.Make(input.Title)
 
+	// Handle both plural and singular categories for flexibility
+	categoryIDs := input.CategoryIDs
+	if input.CategoryID != nil && *input.CategoryID != "" {
+		categoryIDs = append(categoryIDs, *input.CategoryID)
+	}
+
 	course := &domain.Course{
 		Title:            input.Title,
 		Slug:             courseSlug,
 		Description:      input.Description,
 		ShortDescription: input.ShortDescription,
+		ThumbnailURL:     input.ThumbnailURL,
 		InstructorID:     instructorID,
 		Status:           domain.CourseStatusDraft,
 		Level:            domain.CourseLevel(input.Level),
 		Price:            input.Price,
+		DiscountPrice:    input.DiscountPrice,
 		Requirements:     input.Requirements,
 		WhatYouLearn:     input.WhatYouLearn,
 		Language:         input.Language,
@@ -146,26 +180,31 @@ func (uc *UseCase) Create(ctx context.Context, instructorID uuid.UUID, input Cre
 		return nil, err
 	}
 
-	// Add categories if provided
-	// TODO: Implement category linking
+	// Save curriculum if provided
+	if len(input.Modules) > 0 {
+		if err := uc.saveCurriculum(ctx, course.ID, input.Modules); err != nil {
+			return course, err // Return course anyway but with error
+		}
+	}
 
 	return course, nil
 }
 
 // UpdateInput for updating a course
 type UpdateInput struct {
-	Title            *string  `json:"title" validate:"omitempty,min=5,max=255"`
-	Description      *string  `json:"description"`
-	ShortDescription *string  `json:"short_description" validate:"omitempty,max=500"`
-	ThumbnailURL     *string  `json:"thumbnail_url" validate:"omitempty,url"`
-	PreviewVideoURL  *string  `json:"preview_video_url" validate:"omitempty,url"`
-	Level            *string  `json:"level" validate:"omitempty,oneof=beginner intermediate advanced"`
-	Price            *float64 `json:"price" validate:"omitempty,gte=0"`
-	DiscountPrice    *float64 `json:"discount_price" validate:"omitempty,gte=0"`
-	Requirements     []string `json:"requirements"`
-	WhatYouLearn     []string `json:"what_you_learn"`
-	Language         *string  `json:"language"`
-	IsFeatured       *bool    `json:"is_featured"`
+	Title            *string       `json:"title" form:"title" validate:"omitempty,min=5,max=255"`
+	Description      *string       `json:"description" form:"description"`
+	ShortDescription *string       `json:"short_description" form:"short_description" validate:"omitempty,max=500"`
+	ThumbnailURL     *string       `json:"thumbnail_url" form:"thumbnail_url" validate:"omitempty,url"`
+	PreviewVideoURL  *string       `json:"preview_video_url" form:"preview_video_url" validate:"omitempty,url"`
+	Level            *string       `json:"level" form:"level" validate:"omitempty,oneof=beginner intermediate advanced"`
+	Price            *float64      `json:"price" form:"price" validate:"omitempty,gte=0"`
+	DiscountPrice    *float64      `json:"discount_price" form:"discount_price" validate:"omitempty,gte=0"`
+	Requirements     []string      `json:"requirements" form:"requirements"`
+	WhatYouLearn     []string      `json:"what_you_learn" form:"what_you_learn"`
+	Language         *string       `json:"language" form:"language"`
+	IsFeatured       *bool         `json:"is_featured" form:"is_featured"`
+	Modules          []ModuleInput `json:"modules" form:"-"`
 }
 
 // Update updates a course
@@ -209,15 +248,101 @@ func (uc *UseCase) Update(ctx context.Context, id uuid.UUID, input UpdateInput) 
 	if input.Language != nil {
 		course.Language = *input.Language
 	}
-	if input.IsFeatured != nil {
-		course.IsFeatured = *input.IsFeatured
-	}
+	// Prevent GORM from re-saving old modules that we want to replace
+	course.Modules = nil
 
 	if err := uc.courseRepo.Update(ctx, course); err != nil {
 		return nil, err
 	}
 
-	return course, nil
+	// Save curriculum if provided (this handles deletions, creations, and stats updates)
+	if len(input.Modules) > 0 {
+		if err := uc.saveCurriculum(ctx, course.ID, input.Modules); err != nil {
+			return nil, err
+		}
+	}
+
+	// Fetch fresh course from DB to return accurate data
+	return uc.courseRepo.GetByID(ctx, course.ID)
+}
+
+func (uc *UseCase) saveCurriculum(ctx context.Context, courseID uuid.UUID, modules []ModuleInput) error {
+	f, _ := os.OpenFile("/tmp/course_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if f != nil {
+		defer f.Close()
+		fmt.Fprintf(f, "[%v] saveCurriculum: started for courseID=%s, received %d modules\n", time.Now().Format("15:04:05"), courseID, len(modules))
+	}
+
+	oldModules, err := uc.moduleRepo.GetByCourse(ctx, courseID)
+	if err == nil {
+		if f != nil {
+			fmt.Fprintf(f, "[%v] saveCurriculum: found %d old modules to delete\n", time.Now().Format("15:04:05"), len(oldModules))
+		}
+		for _, m := range oldModules {
+			if err := uc.lessonRepo.DeleteByModule(ctx, m.ID); err != nil {
+				if f != nil {
+					fmt.Fprintf(f, "[%v] saveCurriculum: FAILED deleting lessons for module %s: %v\n", time.Now().Format("15:04:05"), m.ID, err)
+				}
+				return err
+			}
+			if err := uc.moduleRepo.Delete(ctx, m.ID); err != nil {
+				if f != nil {
+					fmt.Fprintf(f, "[%v] saveCurriculum: FAILED deleting module %s: %v\n", time.Now().Format("15:04:05"), m.ID, err)
+				}
+				return err
+			}
+		}
+	} else {
+		if f != nil {
+			fmt.Fprintf(f, "[%v] saveCurriculum: error fetching old modules: %v\n", time.Now().Format("15:04:05"), err)
+		}
+	}
+
+	for i, mInput := range modules {
+		moduleID := uuid.New()
+		module := &domain.Module{
+			ID:          moduleID,
+			CourseID:    courseID,
+			Title:       mInput.Title,
+			Description: mInput.Description,
+			SortOrder:   i,
+			IsPublished: true,
+		}
+
+		if err := uc.moduleRepo.Create(ctx, module); err != nil {
+			if f != nil {
+				fmt.Fprintf(f, "[%v] saveCurriculum: FAILED creating module %d: %v\n", time.Now().Format("15:04:05"), i, err)
+			}
+			return err
+		}
+
+		for j, lInput := range mInput.Lessons {
+			durationSec := lInput.DurationMinutes * 60
+			lesson := &domain.Lesson{
+				ID:            uuid.New(),
+				ModuleID:      moduleID,
+				Title:         lInput.Title,
+				Description:   lInput.Description,
+				Content:       lInput.Content,
+				LessonType:    domain.LessonType(lInput.Type),
+				SortOrder:     j,
+				VideoURL:      lInput.VideoURL,
+				VideoDuration: &durationSec,
+				IsPublished:   true,
+			}
+			if err := uc.lessonRepo.Create(ctx, lesson); err != nil {
+				if f != nil {
+					fmt.Fprintf(f, "[%v] saveCurriculum: FAILED creating lesson %d in module %d: %v\n", time.Now().Format("15:04:05"), j, i, err)
+				}
+				return err
+			}
+		}
+	}
+
+	if f != nil {
+		fmt.Fprintf(f, "[%v] saveCurriculum: COMPLETED successfully\n", time.Now().Format("15:04:05"))
+	}
+	return uc.courseRepo.UpdateStats(ctx, courseID)
 }
 
 // ValidateOwnership checks if user owns the course
@@ -370,6 +495,11 @@ func (uc *UseCase) UpdateModule(ctx context.Context, id uuid.UUID, input UpdateM
 
 // DeleteModule deletes a module
 func (uc *UseCase) DeleteModule(ctx context.Context, id uuid.UUID) error {
+	// First delete all lessons in this module
+	if err := uc.lessonRepo.DeleteByModule(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete module lessons: %w", err)
+	}
+
 	return uc.moduleRepo.Delete(ctx, id)
 }
 
