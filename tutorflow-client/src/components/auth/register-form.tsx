@@ -10,7 +10,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuthStore, User } from "@/store/auth-store";
 import api from "@/lib/api";
 
 const registerSchema = z
@@ -45,13 +45,16 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/register", {
+      const response = await api.post<{
+        user: User;
+        tokens: { access_token: string; refresh_token: string };
+      }>("/auth/register", {
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
         password: data.password,
       });
-      const { user, tokens } = response.data.data;
+      const { user, tokens } = response.data;
       login(user, tokens.access_token, tokens.refresh_token);
       toast.success("Account created successfully!");
       router.push("/dashboard");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,8 +21,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import {
+  createCourseAction,
+  updateCourseAction,
+  createModuleAction,
+  updateModuleAction,
+  deleteModuleAction,
+  createLessonAction,
+  updateLessonAction,
+  deleteLessonAction,
+  publishCourseAction,
+} from "@/app/tutor/courses/actions";
+import { QuizEditor } from "./quiz-editor";
+// import { courseApi } from "@/lib/course-api"; // Migrated to Server Actions
 
 // Validation schema
 const courseSchema = z.object({
@@ -51,10 +72,15 @@ interface Lesson {
   type: "video" | "text" | "quiz";
   order: number;
   duration_minutes: number;
+  video_url?: string;
+  content?: string;
 }
 
 interface CourseFormProps {
-  initialData?: Partial<CourseFormData> & { id?: string };
+  initialData?: Partial<CourseFormData> & {
+    id?: string;
+    status?: "draft" | "published" | "archived";
+  };
   initialModules?: Module[];
 }
 
@@ -66,6 +92,23 @@ export function CourseForm({
   const [isLoading, setIsLoading] = useState(false);
   const [modules, setModules] = useState<Module[]>(initialModules);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
+  // Delete Module State
+  const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Preserve isExpanded state when server data updates
+    setModules((prevModules) => {
+      const expandedState = new Map(
+        prevModules.map((m) => [m.id, m.isExpanded])
+      );
+
+      return initialModules.map((m) => ({
+        ...m,
+        isExpanded: expandedState.get(m.id) || false,
+      }));
+    });
+  }, [initialModules]);
 
   const {
     register,
@@ -98,23 +141,53 @@ export function CourseForm({
   };
 
   // Module management
-  const addModule = () => {
-    const newModule: Module = {
-      id: `temp_${Date.now()}`,
-      title: `Module ${modules.length + 1}`,
-      order: modules.length + 1,
-      lessons: [],
-      isExpanded: true,
-    };
-    setModules([...modules, newModule]);
+  const addModule = async () => {
+    if (!initialData?.id) {
+      toast.error("Please save the course details first.");
+      return;
+    }
+
+    try {
+      const newOrder = modules.length + 1;
+      await createModuleAction(initialData.id, {
+        title: `Module ${newOrder}`,
+        order: newOrder,
+      });
+
+      // router.refresh(); // Handled by Server Action revalidatePath
+      toast.success("Module created");
+    } catch (error) {
+      toast.error("Failed to create module");
+    }
   };
 
-  const removeModule = (moduleId: string) => {
-    setModules(modules.filter((m) => m.id !== moduleId));
+  const confirmDeleteModule = (moduleId: string) => {
+    setDeleteModuleId(moduleId);
   };
 
-  const updateModuleTitle = (moduleId: string, title: string) => {
+  const handleDeleteModule = async () => {
+    if (!initialData?.id || !deleteModuleId) return;
+    try {
+      await deleteModuleAction(initialData.id, deleteModuleId);
+      toast.success("Module deleted");
+      setDeleteModuleId(null);
+    } catch (error) {
+      toast.error("Failed to delete module");
+    }
+  };
+
+  const updateModuleTitleLocal = (moduleId: string, title: string) => {
     setModules(modules.map((m) => (m.id === moduleId ? { ...m, title } : m)));
+  };
+
+  const saveModuleTitle = async (moduleId: string, title: string) => {
+    if (!initialData?.id) return;
+    try {
+      await updateModuleAction(initialData.id, moduleId, { title });
+      // router.refresh();
+    } catch (error) {
+      toast.error("Failed to update module title");
+    }
   };
 
   const toggleModule = (moduleId: string) => {
@@ -126,42 +199,57 @@ export function CourseForm({
   };
 
   // Lesson management
-  const addLesson = (moduleId: string, type: "video" | "text" | "quiz") => {
-    setModules(
-      modules.map((m) => {
-        if (m.id === moduleId) {
-          const newLesson: Lesson = {
-            id: `temp_lesson_${Date.now()}`,
-            title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            type,
-            order: m.lessons.length + 1,
-            duration_minutes: 0,
-          };
-          return { ...m, lessons: [...m.lessons, newLesson] };
-        }
-        return m;
-      })
-    );
+  const addLesson = async (
+    moduleId: string,
+    type: "video" | "text" | "quiz"
+  ) => {
+    if (!initialData?.id) return;
+    try {
+      const module = modules.find((m) => m.id === moduleId);
+      const newOrder = (module?.lessons.length || 0) + 1;
+
+      await createLessonAction(moduleId, {
+        title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+        type,
+        order: newOrder,
+      });
+
+      // router.refresh();
+      toast.success("Lesson created");
+    } catch (error) {
+      toast.error("Failed to create lesson");
+    }
   };
 
-  const removeLesson = (moduleId: string, lessonId: string) => {
-    setModules(
-      modules.map((m) => {
-        if (m.id === moduleId) {
-          return {
-            ...m,
-            lessons: m.lessons.filter((l) => l.id !== lessonId),
-          };
-        }
-        return m;
-      })
-    );
+  const removeLesson = async (moduleId: string, lessonId: string) => {
+    if (!initialData?.id) return;
+    try {
+      await deleteLessonAction(moduleId, lessonId);
+      // router.refresh();
+      toast.success("Lesson deleted");
+    } catch (error) {
+      toast.error("Failed to delete lesson");
+    }
   };
 
-  const updateLessonTitle = (
+  const saveLesson = async (
     moduleId: string,
     lessonId: string,
-    title: string
+    data: Partial<Lesson>
+  ) => {
+    try {
+      await updateLessonAction(moduleId, lessonId, data);
+      // router.refresh();
+    } catch (error) {
+      toast.error("Failed to update lesson");
+    }
+  };
+
+  const updateLessonValue = (
+    moduleId: string,
+    lessonId: string,
+    field: keyof Lesson,
+    value: any
   ) => {
     setModules(
       modules.map((m) => {
@@ -169,7 +257,7 @@ export function CourseForm({
           return {
             ...m,
             lessons: m.lessons.map((l) =>
-              l.id === lessonId ? { ...l, title } : l
+              l.id === lessonId ? { ...l, [field]: value } : l
             ),
           };
         }
@@ -206,31 +294,87 @@ export function CourseForm({
       if (data.thumbnail) {
         formData.append("thumbnail", data.thumbnail);
       }
-      formData.append("modules", JSON.stringify(modules));
+      // Modules are now handled granularly via API
 
+      let result;
       if (initialData?.id) {
-        await api.put(`/courses/${initialData.id}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        toast.success("Course updated successfully");
+        result = await updateCourseAction(initialData.id, formData);
       } else {
-        await api.post("/courses", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        toast.success("Course created successfully");
+        result = await createCourseAction(formData);
       }
 
-      router.push("/tutor/courses");
-      router.refresh();
-    } catch (error: unknown) {
-      const err = error as {
-        response?: { data?: { error?: { message?: string } } };
-      };
-      toast.error(
-        err.response?.data?.error?.message || "Failed to save course"
-      );
+      if (result.success) {
+        toast.success(
+          initialData?.id
+            ? "Course updated successfully"
+            : "Course created successfully"
+        );
+        router.push("/tutor/courses");
+      } else {
+        // Robust error handling for Server Action result
+        if (result.error?.code === "VALIDATION_ERROR") {
+          const details = result.error.details;
+          details.forEach((err: { field: string; message: string }) => {
+            // @ts-ignore
+            setError(err.field, { message: err.message });
+          });
+          toast.error("Please fix validation errors");
+        } else {
+          toast.error(result.error?.message || "Failed to save course");
+        }
+      }
+    } catch (error: any) {
+      toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!initialData?.id) return;
+
+    const confirm = window.confirm(
+      "Are you sure you want to publish this course? It will be visible to all students."
+    );
+    if (!confirm) return;
+
+    setIsLoading(true);
+    try {
+      const result = await publishCourseAction(initialData.id);
+      if (result.success) {
+        toast.success("Course published successfully!");
+        router.refresh();
+      } else {
+        toast.error(result.error?.message || "Failed to publish course");
+      }
+    } catch (error) {
+      toast.error("An error occurred while publishing");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case "published":
+        return (
+          <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold uppercase">
+            Published
+          </span>
+        );
+      case "archived":
+        return (
+          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold uppercase">
+            Archived
+          </span>
+        );
+      case "draft":
+      default:
+        return (
+          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-semibold uppercase">
+            Draft
+          </span>
+        );
     }
   };
 
@@ -341,157 +485,291 @@ export function CourseForm({
 
       {/* Modules & Lessons */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Course Content</h3>
-            <p className="text-sm text-muted-foreground">
-              Organize your course into modules and lessons
-            </p>
-          </div>
-          <Button type="button" onClick={addModule}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Module
-          </Button>
-        </div>
-
-        {modules.length === 0 ? (
-          <Card className="text-center py-8">
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                No modules yet. Add your first module to get started.
+        {!initialData?.id ? (
+          <Card className="border-dashed bg-muted/30">
+            <CardContent className="flex flex-col items-center justify-center py-10 text-muted-foreground space-y-2">
+              <h3 className="font-semibold">Curriculum Locked</h3>
+              <p className="text-sm">
+                Save the course details to start adding modules and lessons.
               </p>
-              <Button type="button" variant="outline" onClick={addModule}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Module
-              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {modules.map((module, index) => (
-              <Card key={module.id}>
-                <CardHeader className="py-3">
-                  <div className="flex items-center gap-3">
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {index + 1}
-                    </span>
-                    <Input
-                      value={module.title}
-                      onChange={(e) =>
-                        updateModuleTitle(module.id, e.target.value)
-                      }
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleModule(module.id)}
-                    >
-                      {module.isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive"
-                      onClick={() => removeModule(module.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
+          <>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Course Content</h3>
+                {getStatusBadge(initialData?.status)}
+                <p className="text-sm text-muted-foreground">
+                  Organize your course into modules and lessons
+                </p>
+              </div>
+              <Button type="button" onClick={addModule}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Module
+              </Button>
+            </div>
 
-                {module.isExpanded && (
-                  <CardContent className="pt-0">
-                    <div className="space-y-2 mb-4">
-                      {module.lessons.map((lesson, lessonIndex) => {
-                        const Icon = getLessonIcon(lesson.type);
-                        return (
-                          <div
-                            key={lesson.id}
-                            className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg"
-                          >
-                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                            <span className="text-sm text-muted-foreground w-8">
-                              {lessonIndex + 1}.
-                            </span>
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                            <Input
-                              value={lesson.title}
-                              onChange={(e) =>
-                                updateLessonTitle(
-                                  module.id,
-                                  lesson.id,
-                                  e.target.value
-                                )
-                              }
-                              className="flex-1 h-8"
-                            />
-                            <span className="text-xs text-muted-foreground capitalize">
-                              {lesson.type}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => removeLesson(module.id, lesson.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addLesson(module.id, "video")}
-                      >
-                        <Video className="mr-2 h-4 w-4" />
-                        Video
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addLesson(module.id, "text")}
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Article
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addLesson(module.id, "quiz")}
-                      >
-                        <HelpCircle className="mr-2 h-4 w-4" />
-                        Quiz
-                      </Button>
-                    </div>
-                  </CardContent>
-                )}
+            {modules.length === 0 ? (
+              <Card className="text-center py-8">
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">
+                    No modules yet. Add your first module to get started.
+                  </p>
+                  <Button type="button" variant="outline" onClick={addModule}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Module
+                  </Button>
+                </CardContent>
               </Card>
-            ))}
-          </div>
+            ) : (
+              <div className="space-y-4">
+                {modules.map((module, index) => (
+                  <Card key={module.id}>
+                    <CardHeader className="py-3">
+                      <div className="flex items-center gap-3">
+                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {index + 1}
+                        </span>
+                        <Input
+                          value={module.title}
+                          onChange={(e) =>
+                            updateModuleTitleLocal(module.id, e.target.value)
+                          }
+                          onBlur={() =>
+                            saveModuleTitle(module.id, module.title)
+                          }
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleModule(module.id)}
+                        >
+                          {module.isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => confirmDeleteModule(module.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+
+                    {module.isExpanded && (
+                      <CardContent className="pt-0">
+                        <div className="space-y-2 mb-4">
+                          {module.lessons.map((lesson, lessonIndex) => {
+                            const Icon = getLessonIcon(lesson.type);
+                            return (
+                              <div
+                                key={lesson.id}
+                                className="p-2 bg-muted/50 rounded-lg space-y-2"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                                  <span className="text-sm text-muted-foreground w-8">
+                                    {lessonIndex + 1}.
+                                  </span>
+                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    value={lesson.title}
+                                    onChange={(e) =>
+                                      updateLessonValue(
+                                        module.id,
+                                        lesson.id,
+                                        "title",
+                                        e.target.value
+                                      )
+                                    }
+                                    onBlur={() =>
+                                      saveLesson(module.id, lesson.id, {
+                                        title: lesson.title,
+                                      })
+                                    }
+                                    className="flex-1 h-8"
+                                  />
+                                  <Input
+                                    type="number"
+                                    value={lesson.duration_minutes}
+                                    onChange={(e) =>
+                                      updateLessonValue(
+                                        module.id,
+                                        lesson.id,
+                                        "duration_minutes",
+                                        parseInt(e.target.value) || 0
+                                      )
+                                    }
+                                    onBlur={() =>
+                                      saveLesson(module.id, lesson.id, {
+                                        duration_minutes:
+                                          lesson.duration_minutes,
+                                      })
+                                    }
+                                    className="w-16 h-8 text-xs"
+                                    placeholder="Min"
+                                  />
+                                  <span className="text-xs text-muted-foreground capitalize">
+                                    {lesson.type}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive"
+                                    onClick={() =>
+                                      removeLesson(module.id, lesson.id)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+
+                                {/* Content Fields */}
+                                <div className="pl-8">
+                                  {lesson.type === "video" && (
+                                    <Input
+                                      placeholder="Video URL (e.g., YouTube, Vimeo)"
+                                      value={lesson.video_url || ""}
+                                      onChange={(e) =>
+                                        updateLessonValue(
+                                          module.id,
+                                          lesson.id,
+                                          "video_url",
+                                          e.target.value
+                                        )
+                                      }
+                                      onBlur={() =>
+                                        saveLesson(module.id, lesson.id, {
+                                          video_url: lesson.video_url,
+                                        })
+                                      }
+                                      className="h-8 text-xs bg-background"
+                                    />
+                                  )}
+                                  {lesson.type === "text" && (
+                                    <textarea
+                                      placeholder="Article content..."
+                                      value={lesson.content || ""}
+                                      onChange={(e) =>
+                                        updateLessonValue(
+                                          module.id,
+                                          lesson.id,
+                                          "content",
+                                          e.target.value
+                                        )
+                                      }
+                                      onBlur={() =>
+                                        saveLesson(module.id, lesson.id, {
+                                          content: lesson.content,
+                                        })
+                                      }
+                                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[100px]"
+                                    />
+                                  )}
+                                  {lesson.type === "quiz" && (
+                                    <div className="pt-2">
+                                      <QuizEditor
+                                        lessonId={lesson.id}
+                                        lessonTitle={lesson.title}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addLesson(module.id, "video")}
+                          >
+                            <Video className="mr-2 h-4 w-4" />
+                            Video
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addLesson(module.id, "text")}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Article
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addLesson(module.id, "quiz")}
+                          >
+                            <HelpCircle className="mr-2 h-4 w-4" />
+                            Quiz
+                          </Button>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
+      <Dialog
+        open={!!deleteModuleId}
+        onOpenChange={(open) => !open && setDeleteModuleId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Module</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this module? All lessons within it
+              will be permanently deleted. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModuleId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteModule}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Submit */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
         <Button type="button" variant="outline" asChild>
           <a href="/tutor/courses">Cancel</a>
         </Button>
+
+        {initialData?.id && initialData.status === "draft" && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handlePublish}
+            disabled={isLoading}
+          >
+            Publish Course
+          </Button>
+        )}
+
         <Button type="submit" disabled={isLoading}>
           {isLoading
             ? "Saving..."

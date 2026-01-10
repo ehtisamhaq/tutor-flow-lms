@@ -97,6 +97,22 @@ export interface Course {
     last_name: string;
     avatar_url?: string;
   };
+  modules?: Module[];
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  sort_order: number;
+  lessons: Lesson[];
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  type: "video" | "text" | "quiz";
+  sort_order: number;
+  duration_minutes: number;
 }
 
 export interface Category {

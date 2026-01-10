@@ -1,6 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { authServerFetch, type Course } from "@/lib/server-api";
+import {
+  authServerFetch,
+  type Course,
+  type PaginatedResponse,
+} from "@/lib/server-api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +25,10 @@ interface TutorCourse extends Course {
 
 // Server Component
 export default async function TutorCoursesPage() {
-  const courses = await authServerFetch<TutorCourse[]>("/courses/my");
+  const data = await authServerFetch<PaginatedResponse<TutorCourse>>(
+    "/courses/my"
+  );
+  const courses = data?.items || [];
 
   return (
     <div className="space-y-6">
@@ -40,7 +47,7 @@ export default async function TutorCoursesPage() {
         </Button>
       </div>
 
-      {!courses?.length ? (
+      {!courses.length ? (
         <Card className="text-center py-16">
           <CardContent>
             <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />

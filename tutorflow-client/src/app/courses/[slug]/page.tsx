@@ -10,11 +10,13 @@ import {
   CheckCircle,
   BookOpen,
   Award,
+  FileText,
 } from "lucide-react";
 import { serverApi } from "@/lib/server-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddToCartButton } from "@/components/course/add-to-cart-button";
+import { BuyNowButton } from "@/components/course/buy-now-button";
 
 // Server Component with SSR data fetching
 export default async function CourseDetailPage({
@@ -156,9 +158,7 @@ export default async function CourseDetailPage({
 
                   <div className="space-y-3">
                     <AddToCartButton courseId={course.id} />
-                    <Button variant="outline" className="w-full" size="lg">
-                      Buy Now
-                    </Button>
+                    <BuyNowButton courseId={course.id} />
                   </div>
 
                   <div className="mt-6 space-y-3 text-sm">
@@ -187,11 +187,67 @@ export default async function CourseDetailPage({
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* What you'll learn */}
+              {/* Curriculum Area */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5" />
+                    Course Content
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {course.modules?.length ? (
+                    <div className="divide-y">
+                      {course.modules
+                        .sort((a, b) => a.sort_order - b.sort_order)
+                        .map((module) => (
+                          <div key={module.id} className="p-4">
+                            <h4 className="font-semibold mb-3 flex items-center justify-between">
+                              {module.title}
+                              <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                                {module.lessons?.length || 0} lessons
+                              </span>
+                            </h4>
+                            <div className="space-y-2">
+                              {module.lessons
+                                ?.sort((a, b) => a.sort_order - b.sort_order)
+                                .map((lesson) => (
+                                  <div
+                                    key={lesson.id}
+                                    className="flex items-center justify-between text-sm py-1 hover:text-primary transition-colors group cursor-default"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {lesson.type === "video" ? (
+                                        <Play className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                                      )}
+                                      <span>{lesson.title}</span>
+                                    </div>
+                                    {lesson.duration_minutes > 0 && (
+                                      <span className="text-muted-foreground text-xs">
+                                        {lesson.duration_minutes}m
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-muted-foreground italic">
+                      No curriculum available yet.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* What you'll learn */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
                     What You&apos;ll Learn
                   </CardTitle>
                 </CardHeader>

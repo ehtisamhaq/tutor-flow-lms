@@ -7,15 +7,9 @@ import {
 } from "@/lib/server-api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  BookOpen,
-  Plus,
-  MoreHorizontal,
-  Star,
-  Users,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { BookOpen, Eye, EyeOff, Plus, Star, Users } from "lucide-react";
+import { CourseSearch } from "@/components/admin/course-search";
+import { CourseActions } from "@/components/admin/course-actions";
 
 interface AdminCourse extends Course {
   status: "draft" | "published" | "archived";
@@ -26,14 +20,17 @@ interface AdminCourse extends Course {
 export default async function AdminCoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; search?: string }>;
 }) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const status = params.status || "";
+  const search = params.search || "";
 
   const courses = await authServerFetch<PaginatedResponse<AdminCourse>>(
-    `/admin/courses?page=${page}&limit=20${status ? `&status=${status}` : ""}`
+    `/admin/courses?page=${page}&limit=20${status ? `&status=${status}` : ""}${
+      search ? `&search=${search}` : ""
+    }`
   );
 
   return (
@@ -53,20 +50,23 @@ export default async function AdminCoursesPage({
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        {["", "draft", "published", "archived"].map((s) => (
-          <Button
-            key={s}
-            variant={status === s ? "default" : "outline"}
-            size="sm"
-            asChild
-          >
-            <Link href={`/admin/courses${s ? `?status=${s}` : ""}`}>
-              {s || "All"}
-            </Link>
-          </Button>
-        ))}
+      {/* Filters & Search */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex gap-2">
+          {["", "draft", "published", "archived"].map((s) => (
+            <Button
+              key={s}
+              variant={status === s ? "default" : "outline"}
+              size="sm"
+              asChild
+            >
+              <Link href={`/admin/courses${s ? `?status=${s}` : ""}`}>
+                {s || "All"}
+              </Link>
+            </Button>
+          ))}
+        </div>
+        <CourseSearch />
       </div>
 
       <Card>
@@ -137,9 +137,10 @@ export default async function AdminCoursesPage({
                       )}
                       {course.status}
                     </span>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <CourseActions
+                      courseId={course.id}
+                      currentStatus={course.status}
+                    />
                   </div>
                 </div>
               ))}

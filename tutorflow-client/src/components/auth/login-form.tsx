@@ -10,7 +10,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuthStore, User } from "@/store/auth-store";
 import api from "@/lib/api";
 
 const loginSchema = z.object({
@@ -37,12 +37,19 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/login", data);
-      const { user, tokens } = response.data.data;
+      const response = await api.post<{
+        user: User;
+        tokens: { access_token: string; refresh_token: string };
+      }>("/auth/login", data);
+      const { user, tokens } = response.data;
       login(user, tokens.access_token, tokens.refresh_token);
       toast.success("Welcome back!");
       if (user.role === "admin") {
         router.push("/admin");
+      } else if (user.role === "manager") {
+        router.push("/manager");
+      } else if (user.role === "tutor") {
+        router.push("/tutor");
       } else {
         router.push("/dashboard");
       }

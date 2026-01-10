@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { GraduationCap, Play, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
 
 interface Enrollment {
   id: string;
@@ -25,12 +25,16 @@ interface Enrollment {
 
 // Server Component with SSR data fetching
 export default async function MyCoursesPage() {
-  const enrollments = await authServerFetch<Enrollment[]>("/enrollments/my");
+  const data = await authServerFetch<PaginatedResponse<Enrollment>>(
+    "/enrollments/my"
+  );
 
   // Redirect to login if not authenticated
-  if (enrollments === null) {
+  if (data === null) {
     redirect("/login");
   }
+
+  const enrollments = data.items || [];
 
   return (
     <div className="space-y-6">
