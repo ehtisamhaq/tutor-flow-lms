@@ -6,13 +6,15 @@ import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { logout as logoutAction } from "@/app/(auth)/lib/actions";
+
 export function AdminSidebar() {
-  const { user, logout } = useAuthStore();
+  const { user, logout: clientLogout } = useAuthStore();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    clientLogout();
+    await logoutAction();
   };
 
   return (

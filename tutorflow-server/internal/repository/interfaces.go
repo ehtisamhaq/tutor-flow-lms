@@ -118,6 +118,7 @@ type EnrollmentRepository interface {
 	GetByUser(ctx context.Context, userID uuid.UUID, page, limit int) ([]domain.Enrollment, int64, error)
 	GetByCourse(ctx context.Context, courseID uuid.UUID, page, limit int) ([]domain.Enrollment, int64, error)
 	UpdateProgress(ctx context.Context, id uuid.UUID, progress float64) error
+	GetStats(ctx context.Context, userID uuid.UUID) (*domain.StudentDashboardStats, error)
 }
 
 type EnrollmentFilters struct {

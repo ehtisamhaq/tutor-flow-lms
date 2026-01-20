@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,7 @@ export function SettingsForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -36,13 +37,25 @@ export function SettingsForm() {
     },
   });
 
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      reset({
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+      });
+    }
+  }, [user, reset]);
+
   const onSubmit = async (data: ProfileFormData) => {
     if (!user) return;
 
     setIsLoading(true);
     try {
-      const response = await api.put<{ data: User }>(`/users/${user.id}`, data);
-      setUser(response.data.data);
+      // API wrapper automatically extracts 'data' from response
+      const response = await api.put<User>(`/users/${user.id}`, data);
+      setUser(response.data);
       toast.success("Profile updated successfully");
     } catch (error: unknown) {
       const err = error as {

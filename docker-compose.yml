@@ -19,12 +19,15 @@ services:
       timeout: 5s
       retries: 5
 
-  dbgate:
-    image: dbgate/dbgate
-    container_name: tutorflow_dbgate
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tutorflow_pgadmin
     restart: always
     ports:
-      - "8082:3000"
+      - "8083:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     depends_on:
       - postgres
 
@@ -41,27 +44,71 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    container_name: tutorflow_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb myminio/${STORAGE_S3_BUCKET};
+      /usr/bin/mc anonymous set private myminio/${STORAGE_S3_BUCKET};
+      exit 0;
+      "
+
   server:
     build:
       context: ./tutorflow-server
       dockerfile: Dockerfile
     container_name: tutorflow_server
     environment:
-      - APP_ENV=development
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=postgres
-      - DATABASE_NAME=tutorflow
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+      - APP_ENV=${APP_ENV}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - STORAGE_DRIVER=${STORAGE_DRIVER}
+      - STORAGE_S3_ENDPOINT=${STORAGE_S3_ENDPOINT}
+      - STORAGE_S3_REGION=${STORAGE_S3_REGION}
+      - STORAGE_S3_BUCKET=${STORAGE_S3_BUCKET}
+      - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}
+      - STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY}
+      - STORAGE_USE_SSL=${STORAGE_USE_SSL}
+      - STORAGE_CDN_BASE_URL=${STORAGE_CDN_BASE_URL}
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     volumes:
       - ./tutorflow-server/uploads:/app/uploads
@@ -71,16 +118,21 @@ services:
     build:
       context: ./tutorflow-client
       dockerfile: Dockerfile
+      target: dev
     container_name: tutorflow_client
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
-      # If SSR needs to talk to server container directly:
-      # - API_URL_INTERNAL=http://server:8080
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - BACKEND_API_URL=${BACKEND_API_URL}
     ports:
       - "3000:3000"
     depends_on:
       - server
+    volumes:
+      - ./tutorflow-client:/app
+      - /app/node_modules
+      - /app/.next
 
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

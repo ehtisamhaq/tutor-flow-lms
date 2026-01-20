@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Hls from "hls.js";
 
 interface Caption {
   src: string;
@@ -79,7 +80,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       onBookmarkRemove,
       onComplete,
     },
-    ref
+    ref,
   ) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -99,6 +100,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const [buffered, setBuffered] = useState(0);
 
     const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hlsRef = useRef<Hls | null>(null);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -128,12 +130,43 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       const video = videoRef.current;
       if (!video) return;
 
+      const isHLS = src.endsWith(".m3u8");
+
+      // Cleanup previous HLS instance if exists
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
       const handleLoadedMetadata = () => {
         setDuration(video.duration);
-        if (initialTime > 0) {
-          video.currentTime = initialTime;
+        if (initialTime > 0 && !isHLS) {
+          if (video.readyState >= 1) {
+            video.currentTime = initialTime;
+          }
         }
       };
+
+      if (isHLS && Hls.isSupported()) {
+        const hls = new Hls({
+          xhrSetup: (xhr, url) => {
+            xhr.withCredentials = true;
+          },
+        });
+        hlsRef.current = hls;
+        hls.loadSource(src);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (initialTime > 0) {
+            video.currentTime = initialTime;
+          }
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl") || isHLS) {
+        video.src = src;
+      } else {
+        video.src = src;
+      }
 
       const handleTimeUpdate = () => {
         setCurrentTime(video.currentTime);
@@ -167,6 +200,10 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       video.addEventListener("pause", handlePause);
 
       return () => {
+        if (hlsRef.current) {
+          hlsRef.current.destroy();
+          hlsRef.current = null;
+        }
         video.removeEventListener("loadedmetadata", handleLoadedMetadata);
         video.removeEventListener("timeupdate", handleTimeUpdate);
         video.removeEventListener("progress", handleProgress);
@@ -174,7 +211,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         video.removeEventListener("play", handlePlay);
         video.removeEventListener("pause", handlePause);
       };
-    }, [initialTime, onProgress, onComplete]);
+    }, [src, initialTime, onProgress, onComplete]);
 
     // Fullscreen change handler
     useEffect(() => {
@@ -186,7 +223,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       return () =>
         document.removeEventListener(
           "fullscreenchange",
-          handleFullscreenChange
+          handleFullscreenChange,
         );
     }, []);
 
@@ -266,7 +303,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       if (videoRef.current) {
         videoRef.current.currentTime = Math.max(
           0,
-          Math.min(duration, currentTime + seconds)
+          Math.min(duration, currentTime + seconds),
         );
       }
     };
@@ -322,19 +359,28 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     };
 
     const isBookmarked = bookmarks.some(
-      (b) => Math.abs(b.time - currentTime) < 3
+      (b) => Math.abs(b.time - currentTime) < 3,
     );
 
     const handleBookmark = () => {
       if (isBookmarked) {
         const bookmark = bookmarks.find(
-          (b) => Math.abs(b.time - currentTime) < 3
+          (b) => Math.abs(b.time - currentTime) < 3,
         );
         if (bookmark) onBookmarkRemove?.(bookmark.id);
       } else {
         onBookmarkAdd?.(currentTime);
       }
     };
+
+    const getYouTubeId = (url: string) => {
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return match && match[2].length === 11 ? match[2] : null;
+    };
+
+    const youtubeId = getYouTubeId(src);
 
     return (
       <div
@@ -344,292 +390,303 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         onMouseLeave={() => isPlaying && setShowControls(false)}
         tabIndex={0}
       >
-        {/* Video Element */}
-        <video
-          ref={videoRef}
-          src={src}
-          poster={poster}
-          className="w-full h-full"
-          onClick={togglePlay}
-          playsInline
-        >
-          {captions.map((caption) => (
-            <track
-              key={caption.language}
-              kind="subtitles"
-              src={caption.src}
-              srcLang={caption.language}
-              label={caption.label}
-            />
-          ))}
-        </video>
-
-        {/* Bookmark markers on progress bar */}
-        {bookmarks.length > 0 && (
-          <div className="absolute bottom-12 left-0 right-0 h-1 pointer-events-none">
-            {bookmarks.map((bookmark) => (
-              <div
-                key={bookmark.id}
-                className="absolute w-2 h-2 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${(bookmark.time / duration) * 100}%`,
-                  top: "50%",
-                }}
-                title={bookmark.title}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Controls Overlay */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 transition-opacity",
-            showControls ? "opacity-100" : "opacity-0 pointer-events-none"
-          )}
-        >
-          {/* Top Bar */}
-          <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
-            {title && (
-              <h3 className="text-white font-medium truncate">{title}</h3>
-            )}
-          </div>
-
-          {/* Center Play Button */}
-          <button
-            onClick={togglePlay}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-          >
-            {isPlaying ? (
-              <Pause className="h-8 w-8 text-white" />
-            ) : (
-              <Play className="h-8 w-8 text-white ml-1" />
-            )}
-          </button>
-
-          {/* Bottom Controls */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-            {/* Progress Bar */}
-            <div
-              ref={progressRef}
-              className="relative h-1 bg-white/30 rounded-full cursor-pointer group/progress"
-              onClick={handleProgressClick}
+        {youtubeId ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0&modestbranding=1`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <>
+            {/* Video Element */}
+            <video
+              ref={videoRef}
+              src={src && !src.endsWith(".m3u8") ? src : undefined} // Only set src for non-HLS initially
+              poster={poster}
+              className="w-full h-full"
+              onClick={togglePlay}
+              playsInline
             >
-              {/* Buffered */}
-              <div
-                className="absolute h-full bg-white/50 rounded-full"
-                style={{ width: `${buffered}%` }}
-              />
-              {/* Progress */}
-              <div
-                className="absolute h-full bg-primary rounded-full"
-                style={{ width: `${(currentTime / duration) * 100}%` }}
-              />
-              {/* Thumb */}
-              <div
-                className="absolute w-3 h-3 bg-primary rounded-full transform -translate-y-1/3 -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity"
-                style={{ left: `${(currentTime / duration) * 100}%` }}
-              />
-            </div>
+              {captions.map((caption) => (
+                <track
+                  key={caption.language}
+                  kind="subtitles"
+                  src={caption.src}
+                  srcLang={caption.language}
+                  label={caption.label}
+                />
+              ))}
+            </video>
 
-            {/* Control Buttons */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {/* Play/Pause */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20"
-                  onClick={togglePlay}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-5 w-5" />
-                  ) : (
-                    <Play className="h-5 w-5" />
-                  )}
-                </Button>
-
-                {/* Skip Back */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20"
-                  onClick={() => skip(-10)}
-                >
-                  <SkipBack className="h-5 w-5" />
-                </Button>
-
-                {/* Skip Forward */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20"
-                  onClick={() => skip(10)}
-                >
-                  <SkipForward className="h-5 w-5" />
-                </Button>
-
-                {/* Volume */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                    onClick={toggleMute}
-                  >
-                    {isMuted || volume === 0 ? (
-                      <VolumeX className="h-5 w-5" />
-                    ) : (
-                      <Volume2 className="h-5 w-5" />
-                    )}
-                  </Button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => {
-                      const newVolume = parseFloat(e.target.value);
-                      if (videoRef.current) {
-                        videoRef.current.volume = newVolume;
-                        setVolume(newVolume);
-                        setIsMuted(newVolume === 0);
-                      }
+            {/* Bookmark markers on progress bar */}
+            {bookmarks.length > 0 && (
+              <div className="absolute bottom-12 left-0 right-0 h-1 pointer-events-none">
+                {bookmarks.map((bookmark) => (
+                  <div
+                    key={bookmark.id}
+                    className="absolute w-2 h-2 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${(bookmark.time / duration) * 100}%`,
+                      top: "50%",
                     }}
-                    className="w-20 accent-primary"
+                    title={bookmark.title}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Controls Overlay */}
+            <div
+              className={cn(
+                "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 transition-opacity",
+                showControls ? "opacity-100" : "opacity-0 pointer-events-none",
+              )}
+            >
+              {/* Top Bar */}
+              <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
+                {title && (
+                  <h3 className="text-white font-medium truncate">{title}</h3>
+                )}
+              </div>
+
+              {/* Center Play Button */}
+              <button
+                onClick={togglePlay}
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+              >
+                {isPlaying ? (
+                  <Pause className="h-8 w-8 text-white" />
+                ) : (
+                  <Play className="h-8 w-8 text-white ml-1" />
+                )}
+              </button>
+
+              {/* Bottom Controls */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                {/* Progress Bar */}
+                <div
+                  ref={progressRef}
+                  className="relative h-1 bg-white/30 rounded-full cursor-pointer group/progress"
+                  onClick={handleProgressClick}
+                >
+                  {/* Buffered */}
+                  <div
+                    className="absolute h-full bg-white/50 rounded-full"
+                    style={{ width: `${buffered}%` }}
+                  />
+                  {/* Progress */}
+                  <div
+                    className="absolute h-full bg-primary rounded-full"
+                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                  />
+                  {/* Thumb */}
+                  <div
+                    className="absolute w-3 h-3 bg-primary rounded-full transform -translate-y-1/3 -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity"
+                    style={{ left: `${(currentTime / duration) * 100}%` }}
                   />
                 </div>
 
-                {/* Time */}
-                <span className="text-white text-sm">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Bookmark */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20"
-                  onClick={handleBookmark}
-                  title="Add bookmark"
-                >
-                  {isBookmarked ? (
-                    <BookmarkCheck className="h-5 w-5 text-yellow-400" />
-                  ) : (
-                    <Bookmark className="h-5 w-5" />
-                  )}
-                </Button>
-
-                {/* Speed */}
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 text-sm"
-                    onClick={() => {
-                      setShowSpeedMenu(!showSpeedMenu);
-                      setShowCaptionMenu(false);
-                    }}
-                  >
-                    {playbackSpeed}x
-                  </Button>
-                  {showSpeedMenu && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg p-2 min-w-[100px]">
-                      {PLAYBACK_SPEEDS.map((speed) => (
-                        <button
-                          key={speed}
-                          className={cn(
-                            "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
-                            playbackSpeed === speed
-                              ? "text-primary"
-                              : "text-white"
-                          )}
-                          onClick={() => setSpeed(speed)}
-                        >
-                          {speed}x
-                          {playbackSpeed === speed && (
-                            <Check className="h-4 w-4" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Captions */}
-                {captions.length > 0 && (
-                  <div className="relative">
+                {/* Control Buttons */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {/* Play/Pause */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "text-white hover:bg-white/20",
-                        activeCaption && "text-primary"
-                      )}
-                      onClick={() => {
-                        setShowCaptionMenu(!showCaptionMenu);
-                        setShowSpeedMenu(false);
-                      }}
+                      className="text-white hover:bg-white/20"
+                      onClick={togglePlay}
                     >
-                      <Subtitles className="h-5 w-5" />
+                      {isPlaying ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5" />
+                      )}
                     </Button>
-                    {showCaptionMenu && (
-                      <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg p-2 min-w-[120px]">
-                        <button
+
+                    {/* Skip Back */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20"
+                      onClick={() => skip(-10)}
+                    >
+                      <SkipBack className="h-5 w-5" />
+                    </Button>
+
+                    {/* Skip Forward */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20"
+                      onClick={() => skip(10)}
+                    >
+                      <SkipForward className="h-5 w-5" />
+                    </Button>
+
+                    {/* Volume */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/20"
+                        onClick={toggleMute}
+                      >
+                        {isMuted || volume === 0 ? (
+                          <VolumeX className="h-5 w-5" />
+                        ) : (
+                          <Volume2 className="h-5 w-5" />
+                        )}
+                      </Button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={isMuted ? 0 : volume}
+                        onChange={(e) => {
+                          const newVolume = parseFloat(e.target.value);
+                          if (videoRef.current) {
+                            videoRef.current.volume = newVolume;
+                            setVolume(newVolume);
+                            setIsMuted(newVolume === 0);
+                          }
+                        }}
+                        className="w-20 accent-primary"
+                      />
+                    </div>
+
+                    {/* Time */}
+                    <span className="text-white text-sm">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Bookmark */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20"
+                      onClick={handleBookmark}
+                      title="Add bookmark"
+                    >
+                      {isBookmarked ? (
+                        <BookmarkCheck className="h-5 w-5 text-yellow-400" />
+                      ) : (
+                        <Bookmark className="h-5 w-5" />
+                      )}
+                    </Button>
+
+                    {/* Speed */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/20 text-sm"
+                        onClick={() => {
+                          setShowSpeedMenu(!showSpeedMenu);
+                          setShowCaptionMenu(false);
+                        }}
+                      >
+                        {playbackSpeed}x
+                      </Button>
+                      {showSpeedMenu && (
+                        <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg p-2 min-w-[100px]">
+                          {PLAYBACK_SPEEDS.map((speed) => (
+                            <button
+                              key={speed}
+                              className={cn(
+                                "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
+                                playbackSpeed === speed
+                                  ? "text-primary"
+                                  : "text-white",
+                              )}
+                              onClick={() => setSpeed(speed)}
+                            >
+                              {speed}x
+                              {playbackSpeed === speed && (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Captions */}
+                    {captions.length > 0 && (
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className={cn(
-                            "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
-                            !activeCaption ? "text-primary" : "text-white"
+                            "text-white hover:bg-white/20",
+                            activeCaption && "text-primary",
                           )}
-                          onClick={() => toggleCaption(null)}
+                          onClick={() => {
+                            setShowCaptionMenu(!showCaptionMenu);
+                            setShowSpeedMenu(false);
+                          }}
                         >
-                          Off
-                          {!activeCaption && <Check className="h-4 w-4" />}
-                        </button>
-                        {captions.map((caption) => (
-                          <button
-                            key={caption.language}
-                            className={cn(
-                              "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
-                              activeCaption === caption.language
-                                ? "text-primary"
-                                : "text-white"
-                            )}
-                            onClick={() => toggleCaption(caption.language)}
-                          >
-                            {caption.label}
-                            {activeCaption === caption.language && (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </button>
-                        ))}
+                          <Subtitles className="h-5 w-5" />
+                        </Button>
+                        {showCaptionMenu && (
+                          <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg p-2 min-w-[120px]">
+                            <button
+                              className={cn(
+                                "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
+                                !activeCaption ? "text-primary" : "text-white",
+                              )}
+                              onClick={() => toggleCaption(null)}
+                            >
+                              Off
+                              {!activeCaption && <Check className="h-4 w-4" />}
+                            </button>
+                            {captions.map((caption) => (
+                              <button
+                                key={caption.language}
+                                className={cn(
+                                  "w-full text-left px-3 py-1.5 text-sm rounded hover:bg-white/20 flex items-center justify-between",
+                                  activeCaption === caption.language
+                                    ? "text-primary"
+                                    : "text-white",
+                                )}
+                                onClick={() => toggleCaption(caption.language)}
+                              >
+                                {caption.label}
+                                {activeCaption === caption.language && (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Fullscreen */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20"
-                  onClick={toggleFullscreen}
-                >
-                  {isFullscreen ? (
-                    <Minimize className="h-5 w-5" />
-                  ) : (
-                    <Maximize className="h-5 w-5" />
-                  )}
-                </Button>
+                    {/* Fullscreen */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20"
+                      onClick={toggleFullscreen}
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-5 w-5" />
+                      ) : (
+                        <Maximize className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     );
-  }
+  },
 );
 
 VideoPlayer.displayName = "VideoPlayer";

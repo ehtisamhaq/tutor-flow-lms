@@ -19,23 +19,23 @@ const (
 
 // Enrollment represents a student's enrollment in a course
 type Enrollment struct {
-	ID              uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID          uuid.UUID        `gorm:"type:uuid;index;not null" json:"user_id"`
-	CourseID        uuid.UUID        `gorm:"type:uuid;index;not null" json:"course_id"`
-	Status          EnrollmentStatus `gorm:"type:enrollment_status;not null;default:'pending'" json:"status"`
-	EnrolledAt      time.Time        `gorm:"not null;default:CURRENT_TIMESTAMP" json:"enrolled_at"`
-	StartedAt       *time.Time       `json:"started_at,omitempty"`
-	CompletedAt     *time.Time       `json:"completed_at,omitempty"`
-	ExpiresAt       *time.Time       `json:"expires_at,omitempty"`
-	ProgressPercent float64          `gorm:"type:decimal(5,2);default:0" json:"progress_percent"`
-	LastAccessedAt  *time.Time       `json:"last_accessed_at,omitempty"`
-	OrderID         *uuid.UUID       `gorm:"type:uuid" json:"order_id,omitempty"` // Link to purchase
+	ID             uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID         uuid.UUID        `gorm:"type:uuid;index;not null" json:"user_id"`
+	CourseID       uuid.UUID        `gorm:"type:uuid;index;not null" json:"course_id"`
+	Status         EnrollmentStatus `gorm:"type:enrollment_status;not null;default:'pending'" json:"status"`
+	EnrolledAt     time.Time        `gorm:"not null;default:CURRENT_TIMESTAMP" json:"enrolled_at"`
+	StartedAt      *time.Time       `json:"started_at,omitempty"`
+	CompletedAt    *time.Time       `json:"completed_at,omitempty"`
+	ExpiresAt      *time.Time       `json:"expires_at,omitempty"`
+	Progress       float64          `gorm:"column:progress_percent;type:decimal(5,2);default:0" json:"progress"`
+	LastAccessedAt *time.Time       `json:"last_accessed_at,omitempty"`
+	OrderID        *uuid.UUID       `gorm:"type:uuid" json:"order_id,omitempty"` // Link to purchase
 
 	// Relationships
-	User        *User            `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Course      *Course          `gorm:"foreignKey:CourseID" json:"course,omitempty"`
-	Certificate *Certificate     `gorm:"foreignKey:EnrollmentID" json:"certificate,omitempty"`
-	Progress    []LessonProgress `gorm:"foreignKey:EnrollmentID" json:"progress,omitempty"`
+	User             *User            `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Course           *Course          `gorm:"foreignKey:CourseID" json:"course"`
+	Certificate      *Certificate     `gorm:"foreignKey:EnrollmentID" json:"certificate,omitempty"`
+	LessonProgresses []LessonProgress `gorm:"foreignKey:EnrollmentID" json:"lesson_progresses"`
 }
 
 func (e *Enrollment) IsActive() bool {
@@ -70,7 +70,7 @@ type LessonProgress struct {
 	UpdatedAt     time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	Enrollment *Enrollment `gorm:"foreignKey:EnrollmentID" json:"-"`
-	Lesson     *Lesson     `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	Lesson     *Lesson     `gorm:"foreignKey:LessonID" json:"lesson"`
 }
 
 // EnrollmentRepository interface
@@ -84,4 +84,12 @@ type EnrollmentRepository interface {
 	Delete(id uuid.UUID) error
 	IsEnrolled(userID, courseID uuid.UUID) (bool, error)
 	UpdateProgress(enrollmentID uuid.UUID, percent float64) error
+}
+
+// StudentDashboardStats represents statistics for the student dashboard
+type StudentDashboardStats struct {
+	EnrolledCourses int     `json:"enrolled_courses"`
+	HoursCompleted  int     `json:"hours_completed"`
+	Certificates    int     `json:"certificates"`
+	AverageProgress float64 `json:"average_progress"`
 }

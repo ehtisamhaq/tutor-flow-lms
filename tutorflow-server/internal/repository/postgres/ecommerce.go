@@ -33,7 +33,7 @@ func (r *cartRepository) GetOrCreate(ctx context.Context, userID *uuid.UUID, ses
 		return nil, errors.New("either user_id or session_id is required")
 	}
 
-	err := query.Preload("Items").Preload("Items.Course").First(&cart).Error
+	err := query.Preload("Items").Preload("Items.Course").Preload("Items.Course.Instructor").First(&cart).Error
 	if err == nil {
 		return &cart, nil
 	}

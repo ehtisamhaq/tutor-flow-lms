@@ -2,46 +2,69 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  // Only proxy requests starting with /api
-  if (!request.nextUrl.pathname.startsWith("/api")) {
-    return NextResponse.next();
+  const { pathname } = request.nextUrl;
+  const accessToken = request.cookies.get("accessToken")?.value;
+
+  // 1. Route Protection
+  const protectedRoutes = [
+    "/dashboard",
+    "/admin",
+    "/tutor",
+    "/student",
+    "/cart",
+    "/learn",
+  ];
+  const authRoutes = ["/login", "/register"];
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  if (isProtectedRoute && !accessToken) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Get the path without /api prefix
-  const path = request.nextUrl.pathname.replace(/^\/api/, "");
-  const searchParams = request.nextUrl.search;
+  // if (isAuthRoute && accessToken) {
+  //   return NextResponse.redirect(new URL("/dashboard", request.url));
+  // }
 
-  // Target Backend URL (Go Backend)
-  const BACKEND_URL =
-    process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
+  // 2. Header Injection for API routes (Proxy runs before rewrites)
+  if (pathname.startsWith("/api")) {
+    const requestHeaders = new Headers(request.headers);
+    if (accessToken) {
+      requestHeaders.set("Authorization", `Bearer ${accessToken}`);
+      // Don't forward cookie header to backend if it's just meant for Next.js
+      requestHeaders.delete("cookie");
+    }
 
-  // Construct the new URL
-  const targetUrl = new URL(`${BACKEND_URL}${path}${searchParams}`);
+    // Forward the session_id if expecting it for some reason
+    const sessionId = request.cookies.get("session_id")?.value;
+    if (sessionId) {
+      requestHeaders.set("X-Session-ID", sessionId);
+    }
 
-  // Create the request headers
-  const requestHeaders = new Headers(request.headers);
+    // In Docker, this hits the 'server' service. Locally, localhost:8080.
+    const BACKEND_URL =
+      process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
 
-  // Inject Authorization header from cookies if it exists and NOT already present
-  const token = request.cookies.get("accessToken")?.value;
-  if (token && !requestHeaders.has("Authorization")) {
-    requestHeaders.set("Authorization", `Bearer ${token}`);
+    const path = pathname.replace(/^\/api/, "");
+    const searchParams = request.nextUrl.search;
+    const targetUrl = new URL(`${BACKEND_URL}${path}${searchParams}`);
+
+    return NextResponse.rewrite(targetUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  // Inject Session ID if it exists
-  const sessionId = request.cookies.get("sessionId")?.value;
-  if (sessionId && !requestHeaders.has("X-Session-ID")) {
-    requestHeaders.set("X-Session-ID", sessionId);
-  }
-
-  // Use NextResponse.rewrite to proxy the request
-  return NextResponse.rewrite(targetUrl, {
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  return NextResponse.next();
 }
 
-// Config matcher to only run on /api routes
 export const config = {
-  matcher: "/api/:path*",
+  matcher: [
+    // Match all paths except static files
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 };

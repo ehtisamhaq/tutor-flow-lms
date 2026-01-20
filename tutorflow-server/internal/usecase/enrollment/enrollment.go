@@ -76,9 +76,30 @@ func (uc *UseCase) GetByID(ctx context.Context, id uuid.UUID) (*domain.Enrollmen
 	return uc.enrollmentRepo.GetByID(ctx, id)
 }
 
+// GetByCourseSlug returns enrollment for user and course slug
+func (uc *UseCase) GetByCourseSlug(ctx context.Context, userID uuid.UUID, slug string) (*domain.Enrollment, error) {
+	course, err := uc.courseRepo.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, domain.ErrCourseNotFound
+	}
+
+	enroll, err := uc.enrollmentRepo.GetByUserAndCourse(ctx, userID, course.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	enroll.Course = course
+	return enroll, nil
+}
+
 // GetByUserAndCourse returns enrollment for user and course
 func (uc *UseCase) GetByUserAndCourse(ctx context.Context, userID, courseID uuid.UUID) (*domain.Enrollment, error) {
 	return uc.enrollmentRepo.GetByUserAndCourse(ctx, userID, courseID)
+}
+
+// GetDashboardStats returns student's learning statistics
+func (uc *UseCase) GetDashboardStats(ctx context.Context, userID uuid.UUID) (*domain.StudentDashboardStats, error) {
+	return uc.enrollmentRepo.GetStats(ctx, userID)
 }
 
 // EnrollInput for enrolling in a course
@@ -185,7 +206,7 @@ func (uc *UseCase) Complete(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
 	enrollment.Status = domain.EnrollmentStatusCompleted
 	enrollment.CompletedAt = &now
-	enrollment.ProgressPercent = 100
+	enrollment.Progress = 100
 
 	return uc.enrollmentRepo.Update(ctx, enrollment)
 }

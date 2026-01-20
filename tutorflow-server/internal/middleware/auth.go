@@ -23,6 +23,7 @@ func AuthMiddleware(jwtManager *jwt.Manager) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
+				c.Logger().Errorf("Auth error: Missing authorization header for path %s", c.Path())
 				return response.Unauthorized(c, "Missing authorization header")
 			}
 
@@ -38,8 +39,10 @@ func AuthMiddleware(jwtManager *jwt.Manager) echo.MiddlewareFunc {
 			claims, err := jwtManager.ValidateToken(tokenString)
 			if err != nil {
 				if err == jwt.ErrExpiredToken {
+					c.Logger().Errorf("Auth error: Token has expired for path %s", c.Path())
 					return response.Unauthorized(c, "Token has expired")
 				}
+				c.Logger().Errorf("Auth error: Invalid token for path %s: %v", c.Path(), err)
 				return response.Unauthorized(c, "Invalid token")
 			}
 

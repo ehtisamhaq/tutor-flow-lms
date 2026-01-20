@@ -62,6 +62,29 @@ func (uc *UseCase) GetMyOrders(ctx context.Context, userID uuid.UUID, page, limi
 	return uc.orderRepo.GetByUser(ctx, userID, page, limit)
 }
 
+// GetByCheckoutSession returns order by Stripe checkout session ID
+func (uc *UseCase) GetByCheckoutSession(ctx context.Context, sessionID string) (*domain.Order, error) {
+	// 1. Get session from Stripe
+	session, err := uc.paymentSvc.GetCheckoutSession(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checkout session: %w", err)
+	}
+
+	// 2. Get order ID from metadata
+	orderIDStr, ok := session.Metadata["order_id"]
+	if !ok {
+		return nil, fmt.Errorf("order_id not found in session metadata")
+	}
+
+	orderID, err := uuid.Parse(orderIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid order_id in metadata: %w", err)
+	}
+
+	// 3. Get order from repo
+	return uc.orderRepo.GetByID(ctx, orderID)
+}
+
 // CreateOrder creates an order from cart
 func (uc *UseCase) CreateOrder(ctx context.Context, userID uuid.UUID, email string, input domain.CreateOrderInput) (*domain.CreateOrderOutput, error) {
 	// Get user's cart
@@ -304,6 +327,49 @@ func (uc *UseCase) ConfirmPayment(ctx context.Context, paymentIntentID string) (
 	return output.Order, nil
 }
 
+// ConfirmCheckout confirms a Checkout session and completes order
+func (uc *UseCase) ConfirmCheckout(ctx context.Context, sessionID string) (*domain.Order, error) {
+	// Get session from Stripe to ensure it's paid
+	session, err := uc.paymentSvc.GetCheckoutSession(ctx, sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if session.PaymentStatus != "paid" {
+		return nil, fmt.Errorf("session not paid: %s", session.PaymentStatus)
+	}
+
+	// Get order ID from metadata
+	orderIDStr, ok := session.Metadata["order_id"]
+	if !ok {
+		return nil, fmt.Errorf("order_id not found in session metadata")
+	}
+
+	orderID, err := uuid.Parse(orderIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid order_id in metadata: %w", err)
+	}
+
+	// Get order
+	order, err := uc.orderRepo.GetByID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If already completed, just return
+	if order.Status == domain.OrderStatusCompleted {
+		return order, nil
+	}
+
+	// Complete the order
+	output, err := uc.completeOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	return output.Order, nil
+}
+
 // completeOrder marks order as complete and creates enrollments
 func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*domain.CreateOrderOutput, error) {
 	now := time.Now()
@@ -316,6 +382,15 @@ func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*dom
 
 	// Create enrollments for each course
 	for _, item := range order.Items {
+		// Check if student is already enrolled in this course (idempotency)
+		existing, _ := uc.enrollmentRepo.GetByUserAndCourse(ctx, order.UserID, item.CourseID)
+		if existing != nil {
+			// If already enrolled (maybe from a previous webhook retry), skip creating a new one
+			// but we might want to update it if it's pending/cancelled etc.
+			// For now, we assume if it exists, it's fine.
+			continue
+		}
+
 		enrollment := &domain.Enrollment{
 			UserID:    order.UserID,
 			CourseID:  item.CourseID,
@@ -344,13 +419,16 @@ func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*dom
 }
 
 // HandleWebhook handles Stripe webhook events
-func (uc *UseCase) HandleWebhook(ctx context.Context, eventType string, paymentIntentID string) error {
+func (uc *UseCase) HandleWebhook(ctx context.Context, eventType string, payloadID string) error {
 	switch eventType {
+	case "checkout.session.completed":
+		_, err := uc.ConfirmCheckout(ctx, payloadID)
+		return err
 	case "payment_intent.succeeded":
-		_, err := uc.ConfirmPayment(ctx, paymentIntentID)
+		_, err := uc.ConfirmPayment(ctx, payloadID)
 		return err
 	case "payment_intent.payment_failed":
-		order, err := uc.orderRepo.GetByPaymentIntent(ctx, paymentIntentID)
+		order, err := uc.orderRepo.GetByPaymentIntent(ctx, payloadID)
 		if err != nil {
 			return err
 		}

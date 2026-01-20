@@ -354,6 +354,54 @@ func (r *enrollmentRepository) UpdateProgress(ctx context.Context, id uuid.UUID,
 		}).Error
 }
 
+func (r *enrollmentRepository) GetStats(ctx context.Context, userID uuid.UUID) (*domain.StudentDashboardStats, error) {
+	var stats domain.StudentDashboardStats
+
+	// Count enrolled courses
+	var enrolledCount int64
+	if err := r.db.WithContext(ctx).Model(&domain.Enrollment{}).
+		Where("user_id = ? AND status IN (?, ?, ?)", userID, domain.EnrollmentStatusActive, domain.EnrollmentStatusCompleted, domain.EnrollmentStatusPending).
+		Count(&enrolledCount).Error; err != nil {
+		return nil, err
+	}
+	stats.EnrolledCourses = int(enrolledCount)
+
+	// Count certificates
+	var certCount int64
+	if err := r.db.WithContext(ctx).Model(&domain.Certificate{}).
+		Where("user_id = ?", userID).
+		Count(&certCount).Error; err != nil {
+		return nil, err
+	}
+	stats.Certificates = int(certCount)
+
+	// Calculate average progress
+	var avgProgress float64
+	if err := r.db.WithContext(ctx).Model(&domain.Enrollment{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(AVG(progress_percent), 0)").
+		Scan(&avgProgress).Error; err != nil {
+		return nil, err
+	}
+	stats.AverageProgress = avgProgress
+
+	// Calculate hours completed (Sum of lesson durations for completed lessons)
+	// This requires joining with LessonProgress and Lesson
+	var hoursCompleted float64
+	err := r.db.WithContext(ctx).Table("lesson_progresses").
+		Joins("join enrollments on enrollments.id = lesson_progresses.enrollment_id").
+		Joins("join lessons on lessons.id = lesson_progresses.lesson_id").
+		Where("enrollments.user_id = ? AND lesson_progresses.is_completed = ?", userID, true).
+		Select("COALESCE(SUM(lessons.duration_seconds), 0) / 3600.0").
+		Scan(&hoursCompleted).Error
+	if err != nil {
+		return nil, err
+	}
+	stats.HoursCompleted = int(hoursCompleted)
+
+	return &stats, nil
+}
+
 // LessonProgressRepository
 type lessonProgressRepository struct {
 	db *gorm.DB

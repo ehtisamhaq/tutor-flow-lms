@@ -37,6 +37,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   setItems: (items) => {
     const total = items.reduce((sum, item) => {
+      if (!item.course) return sum;
       const price = item.course.discount_price ?? item.course.price;
       return sum + price;
     }, 0);
@@ -55,6 +56,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (!exists) {
       const newItems = [...items, item];
       const total = newItems.reduce((sum, i) => {
+        if (!i.course) return sum;
         const price = i.course.discount_price ?? i.course.price;
         return sum + price;
       }, 0);
@@ -71,6 +73,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { items } = get();
     const newItems = items.filter((i) => i.course_id !== courseId);
     const total = newItems.reduce((sum, i) => {
+      if (!i.course) return sum;
       const price = i.course.discount_price ?? i.course.price;
       return sum + price;
     }, 0);

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
@@ -190,6 +192,17 @@ func (h *CartHandler) getCartIdentifiers(c echo.Context) (*uuid.UUID, *string) {
 
 	// Generate new session ID
 	newSessionID := uuid.New().String()
+
+	// Set session ID cookie
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    newSessionID,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   86400 * 30, // 30 days
+	}
+	c.SetCookie(cookie)
+
 	return nil, &newSessionID
 }
 

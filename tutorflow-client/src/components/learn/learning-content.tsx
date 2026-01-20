@@ -21,20 +21,21 @@ import { useVideoProgressStore } from "@/store/video-progress-store";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { QuizPlayer } from "./quiz-player";
 
 interface Module {
   id: string;
   title: string;
-  order: number;
+  sort_order: number;
   lessons: Lesson[];
 }
 
 interface Lesson {
   id: string;
   title: string;
-  type: "video" | "text" | "quiz";
-  duration_minutes: number;
-  order: number;
+  lesson_type: "video" | "text" | "quiz" | "assignment" | "resource";
+  video_duration: number; // seconds
+  sort_order: number;
   is_preview: boolean;
   video_url?: string;
   content?: string;
@@ -90,8 +91,8 @@ export function LearningContent({
     }));
   };
 
-  const getLessonIcon = (type: string) => {
-    switch (type) {
+  const getLessonIcon = (lesson_type: string) => {
+    switch (lesson_type) {
       case "video":
         return Play;
       case "quiz":
@@ -123,7 +124,7 @@ export function LearningContent({
           .catch(() => {}); // Silent fail
       }
     },
-    [currentLessonId, courseId, updateProgress]
+    [currentLessonId, courseId, updateProgress],
   );
 
   const handleBookmarkAdd = (time: number) => {
@@ -184,7 +185,7 @@ export function LearningContent({
       <aside
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-40 w-80 border-r bg-card transform transition-transform lg:translate-x-0 overflow-y-auto",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
         style={{ top: "57px", height: "calc(100vh - 57px)" }}
       >
@@ -217,7 +218,7 @@ export function LearningContent({
               {expandedModules[module.id] && (
                 <div className="ml-2 mt-1 space-y-1">
                   {module.lessons.map((lesson) => {
-                    const Icon = getLessonIcon(lesson.type);
+                    const Icon = getLessonIcon(lesson.lesson_type);
                     const isActive = lesson.id === currentLessonId;
                     const progress = getProgress(lesson.id);
 
@@ -229,7 +230,7 @@ export function LearningContent({
                           "flex items-center gap-3 p-2 rounded-lg text-sm transition-colors",
                           isActive
                             ? "bg-primary/10 text-primary"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                            : "hover:bg-muted text-muted-foreground hover:text-foreground",
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
@@ -239,7 +240,7 @@ export function LearningContent({
                             <Check className="h-4 w-4 text-green-600" />
                           )}
                           <span className="text-xs">
-                            {lesson.duration_minutes}m
+                            {Math.round(lesson.video_duration / 60)}m
                           </span>
                         </div>
                       </Link>
@@ -259,21 +260,23 @@ export function LearningContent({
               Bookmarks
             </h4>
             <div className="space-y-2">
-              {lessonBookmarks.map((bookmark) => (
-                <button
-                  key={bookmark.id}
-                  className="w-full text-left text-sm p-2 rounded hover:bg-muted flex items-center gap-2"
-                  onClick={() => {
-                    // TODO: Seek to bookmark time via ref
-                  }}
-                >
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span>{formatTime(bookmark.time)}</span>
-                  <span className="text-muted-foreground truncate">
-                    {bookmark.title}
-                  </span>
-                </button>
-              ))}
+              {lessonBookmarks.map(
+                (bookmark: { id: string; time: number; title: string }) => (
+                  <button
+                    key={bookmark.id}
+                    className="w-full text-left text-sm p-2 rounded hover:bg-muted flex items-center gap-2"
+                    onClick={() => {
+                      // TODO: Seek to bookmark time via ref
+                    }}
+                  >
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span>{formatTime(bookmark.time)}</span>
+                    <span className="text-muted-foreground truncate">
+                      {bookmark.title}
+                    </span>
+                  </button>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -294,7 +297,8 @@ export function LearningContent({
         {currentLesson ? (
           <>
             {/* Video Player */}
-            {currentLesson.type === "video" && currentLesson.video_url ? (
+            {currentLesson.lesson_type === "video" &&
+            currentLesson.video_url ? (
               <VideoPlayer
                 src={currentLesson.video_url}
                 title={currentLesson.title}
@@ -306,7 +310,7 @@ export function LearningContent({
                 onBookmarkRemove={handleBookmarkRemove}
                 onComplete={handleComplete}
               />
-            ) : currentLesson.type === "video" ? (
+            ) : currentLesson.lesson_type === "video" ? (
               <div className="aspect-video bg-black flex items-center justify-center">
                 <div className="text-white text-center">
                   <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
@@ -314,16 +318,11 @@ export function LearningContent({
                   <p className="text-sm opacity-50">{currentLesson.title}</p>
                 </div>
               </div>
-            ) : currentLesson.type === "quiz" ? (
-              <div className="aspect-video bg-muted flex items-center justify-center">
-                <div className="text-center">
-                  <HelpCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Quiz</p>
-                  <p className="text-sm text-muted-foreground">
-                    {currentLesson.title}
-                  </p>
-                </div>
-              </div>
+            ) : currentLesson.lesson_type === "quiz" ? (
+              <QuizPlayer
+                lessonId={currentLesson.id}
+                onComplete={handleComplete}
+              />
             ) : (
               <div className="p-8 prose prose-slate dark:prose-invert max-w-none">
                 <div
@@ -345,10 +344,10 @@ export function LearningContent({
                 </Button>
               </div>
               <p className="text-muted-foreground">
-                {currentLesson.type === "video" && (
+                {currentLesson.lesson_type === "video" && (
                   <span className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    {currentLesson.duration_minutes} minutes
+                    {Math.round(currentLesson.video_duration / 60)} minutes
                     {lessonProgress && (
                       <span className="text-primary">
                         • {Math.round(lessonProgress.percent)}% watched

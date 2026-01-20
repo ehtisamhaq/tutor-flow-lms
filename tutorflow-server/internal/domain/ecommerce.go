@@ -143,7 +143,7 @@ func (c *Coupon) CalculateDiscount(subtotal float64) float64 {
 // Order represents a purchase order
 type Order struct {
 	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	OrderNumber     string         `gorm:"type:varchar(20);uniqueIndex;not null" json:"order_number"`
+	OrderNumber     string         `gorm:"type:varchar(30);uniqueIndex;not null" json:"order_number"`
 	UserID          uuid.UUID      `gorm:"type:uuid;index;not null" json:"user_id"`
 	Status          OrderStatus    `gorm:"type:order_status;not null;default:'pending'" json:"status"`
 	Subtotal        float64        `gorm:"type:decimal(10,2);not null" json:"subtotal"`
@@ -169,7 +169,8 @@ func (o *Order) IsPaid() bool {
 }
 
 func GenerateOrderNumber() string {
-	return "ORD-" + time.Now().Format("20060102") + "-" + uuid.New().String()[:8]
+	// Format: ORD-YYYYMMDD-XXXXXX (19 chars, fits in varchar(20))
+	return "ORD-" + time.Now().Format("20060102") + "-" + uuid.New().String()[:6]
 }
 
 // OrderItem represents an item in an order
@@ -265,6 +266,7 @@ type OrderUseCase interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Order, error)
 	GetByOrderNumber(ctx context.Context, orderNumber string) (*Order, error)
 	GetMyOrders(ctx context.Context, userID uuid.UUID, page, limit int) ([]Order, int64, error)
+	GetByCheckoutSession(ctx context.Context, sessionID string) (*Order, error)
 	CreateOrder(ctx context.Context, userID uuid.UUID, email string, input CreateOrderInput) (*CreateOrderOutput, error)
 	CreateCheckout(ctx context.Context, userID uuid.UUID, email string, input CreateOrderInput) (*CreateOrderOutput, error)
 	ConfirmPayment(ctx context.Context, paymentIntentID string) (*Order, error)

@@ -37,7 +37,7 @@ import {
   addQuestionAction,
   updateQuestionAction,
   deleteQuestionAction,
-} from "@/app/tutor/courses/actions";
+} from "@/app/(dashboard)/tutor/courses/lib/actions";
 
 interface QuizEditorProps {
   lessonId: string;
@@ -222,7 +222,7 @@ export function QuizEditor({ lessonId, lessonTitle }: QuizEditorProps) {
   const updateOption = (
     idx: number,
     field: "text" | "isCorrect",
-    value: string | boolean
+    value: string | boolean,
   ) => {
     const newOptions = [...questionForm.options];
     newOptions[idx] = { ...newOptions[idx], [field]: value } as {

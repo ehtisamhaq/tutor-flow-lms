@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { logout as logoutAction } from "@/app/(auth)/lib/actions";
+
 export function DashboardSidebar() {
-  const { user, logout } = useAuthStore();
+  const { user, logout: clientLogout } = useAuthStore();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    // specific order: client state first (optimistic), then server
+    clientLogout();
+    await logoutAction();
   };
 
   return (

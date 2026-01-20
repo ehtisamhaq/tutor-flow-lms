@@ -36,6 +36,7 @@ func (h *OrderHandler) RegisterRoutes(g *echo.Group, authMW, adminMW echo.Middle
 	g.GET("/my", h.MyOrders, authMW)
 	g.POST("", h.CreateOrder, authMW)
 	g.POST("/checkout", h.CreateCheckout, authMW)
+	g.GET("/checkout-session/:id", h.GetByCheckoutSession, authMW)
 	g.GET("/:id", h.GetOrder, authMW)
 	g.POST("/confirm", h.ConfirmPayment, authMW)
 
@@ -147,6 +148,27 @@ func (h *OrderHandler) GetOrder(c echo.Context) error {
 	return response.Success(c, orderObj)
 }
 
+// GetByCheckoutSession godoc
+// @Summary Get order by Stripe checkout session ID
+// @Tags Orders
+// @Security BearerAuth
+// @Param id path string true "Checkout Session ID"
+// @Success 200 {object} response.Response{data=domain.Order}
+// @Router /orders/checkout-session/{id} [get]
+func (h *OrderHandler) GetByCheckoutSession(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return response.BadRequest(c, "Invalid session ID")
+	}
+
+	orderObj, err := h.orderUC.GetByCheckoutSession(c.Request().Context(), id)
+	if err != nil {
+		return response.NotFound(c, "Order not found for this session")
+	}
+
+	return response.Success(c, orderObj)
+}
+
 // ConfirmPaymentInput for confirming payment
 type ConfirmPaymentInput struct {
 	PaymentIntentID string `json:"payment_intent_id" validate:"required"`
@@ -201,6 +223,18 @@ func (h *OrderHandler) HandleWebhook(c echo.Context) error {
 
 	// Handle event types
 	switch event.Type {
+	case "checkout.session.completed":
+		var session struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		}
+
+		if err := h.orderUC.HandleWebhook(c.Request().Context(), string(event.Type), session.ID); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
 	case "payment_intent.succeeded", "payment_intent.payment_failed":
 		var pi struct {
 			ID string `json:"id"`

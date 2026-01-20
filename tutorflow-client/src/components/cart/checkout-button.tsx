@@ -12,9 +12,8 @@ interface CheckoutButtonProps {
 }
 
 interface CheckoutResponse {
-  data: {
-    checkout_url: string;
-  };
+  checkout_url?: string;
+  order?: any;
 }
 
 export function CheckoutButton({ total }: CheckoutButtonProps) {
@@ -24,20 +23,29 @@ export function CheckoutButton({ total }: CheckoutButtonProps) {
 
   const handleCheckout = async () => {
     setIsLoading(true);
+    console.log("Initiating checkout...");
     try {
       const response = await api.post<CheckoutResponse>("/orders/checkout", {});
-      const { checkout_url } = response.data.data;
+      console.log("Checkout response:", response);
 
-      if (checkout_url) {
-        // Redirect to Stripe checkout
-        window.location.href = checkout_url;
+      // response.data is the T (CheckoutResponse) because api.ts unwraps the backend's "data" field
+      const checkoutData = response.data;
+      const checkoutUrl = checkoutData.checkout_url;
+
+      console.log("Extracted checkout URL:", checkoutUrl);
+
+      if (checkoutUrl) {
+        console.log("Redirecting to Stripe:", checkoutUrl);
+        window.location.href = checkoutUrl;
       } else {
+        console.log("No checkout URL found, assuming free enrollment");
         // Free course - direct enrollment
         clearCart();
         toast.success("Enrollment successful!");
         router.push("/dashboard/my-courses");
       }
     } catch (error: unknown) {
+      console.error("Checkout error:", error);
       const err = error as {
         response?: { data?: { error?: { message?: string } } };
       };

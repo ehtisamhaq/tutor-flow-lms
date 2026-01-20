@@ -45,7 +45,7 @@ type Quiz struct {
 	UpdatedAt          time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	Lesson    *Lesson        `gorm:"foreignKey:LessonID" json:"-"`
-	Questions []QuizQuestion `gorm:"foreignKey:QuizID" json:"questions,omitempty"`
+	Questions []QuizQuestion `gorm:"foreignKey:QuizID" json:"questions"`
 }
 
 func (q *Quiz) TotalPoints() float64 {
@@ -68,7 +68,7 @@ type QuizQuestion struct {
 	CreatedAt    time.Time    `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 
 	Quiz    *Quiz        `gorm:"foreignKey:QuizID" json:"-"`
-	Options []QuizOption `gorm:"foreignKey:QuestionID" json:"options,omitempty"`
+	Options []QuizOption `gorm:"foreignKey:QuestionID" json:"options"`
 }
 
 // QuizOption represents an option for a question

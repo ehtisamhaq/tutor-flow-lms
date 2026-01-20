@@ -81,10 +81,12 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 export const api = {
   get: async <T>(url: string, options: RequestInit = {}) => {
     const token = await getAuthToken();
+    const sessionId = Cookies.get("session_id");
     const response = await fetch(`${BASE_URL}${url}`, {
       ...options,
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionId ? { "X-Session-ID": sessionId } : {}),
         ...options.headers,
       },
     });
@@ -93,6 +95,7 @@ export const api = {
 
   post: async <T>(url: string, body: unknown, options: RequestInit = {}) => {
     const token = await getAuthToken();
+    const sessionId = Cookies.get("session_id");
     const isFormData = body instanceof FormData;
 
     const response = await fetch(`${BASE_URL}${url}`, {
@@ -100,6 +103,7 @@ export const api = {
       method: "POST",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionId ? { "X-Session-ID": sessionId } : {}),
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options.headers,
       },
@@ -110,6 +114,7 @@ export const api = {
 
   put: async <T>(url: string, body: unknown, options: RequestInit = {}) => {
     const token = await getAuthToken();
+    const sessionId = Cookies.get("session_id");
     const isFormData = body instanceof FormData;
 
     const response = await fetch(`${BASE_URL}${url}`, {
@@ -117,6 +122,7 @@ export const api = {
       method: "PUT",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionId ? { "X-Session-ID": sessionId } : {}),
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options.headers,
       },
@@ -127,6 +133,7 @@ export const api = {
 
   patch: async <T>(url: string, body: unknown, options: RequestInit = {}) => {
     const token = await getAuthToken();
+    const sessionId = Cookies.get("session_id");
     const isFormData = body instanceof FormData;
 
     const response = await fetch(`${BASE_URL}${url}`, {
@@ -134,6 +141,7 @@ export const api = {
       method: "PATCH",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionId ? { "X-Session-ID": sessionId } : {}),
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options.headers,
       },
@@ -144,11 +152,13 @@ export const api = {
 
   delete: async <T>(url: string, options: RequestInit = {}) => {
     const token = await getAuthToken();
+    const sessionId = Cookies.get("session_id");
     const response = await fetch(`${BASE_URL}${url}`, {
       ...options,
       method: "DELETE",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionId ? { "X-Session-ID": sessionId } : {}),
         ...options.headers,
       },
     });

@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { CartItem, useCartStore } from "@/store/cart-store";
 
+// Backend returns full Cart object
+interface Cart {
+  id: string;
+  items: CartItem[];
+}
+
 interface BuyNowButtonProps {
   courseId: string;
 }
@@ -14,17 +20,17 @@ interface BuyNowButtonProps {
 export function BuyNowButton({ courseId }: BuyNowButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { addItem } = useCartStore();
+  const { setItems } = useCartStore();
 
   const handleBuyNow = async () => {
     setIsLoading(true);
     try {
-      // 1. Add to cart
-      const response = await api.post<{ data: CartItem }>("/cart/items", {
+      // 1. Add to cart - Backend returns full Cart object
+      const response = await api.post<Cart>("/cart/items", {
         course_id: courseId,
       });
-      const item = response.data.data;
-      addItem(item);
+      // Set all items from the updated cart
+      setItems(response.data.items || []);
 
       // 2. Redirect to cart page (which has checkout button)
       router.push("/cart");

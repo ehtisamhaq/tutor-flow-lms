@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
 
@@ -41,6 +44,9 @@ func (h *VideoHandler) RegisterRoutes(e *echo.Group, authMiddleware echo.Middlew
 	admin := e.Group("/admin/videos", authMiddleware)
 	admin.POST("/:id/encrypt", h.EnableEncryption)
 	admin.POST("/:id/rotate-key", h.RotateKey)
+
+	// Stream Proxy
+	e.GET("/videos/stream/:videoId/*", h.ServeHLS)
 }
 
 // UploadVideoRequest represents a video upload request
@@ -68,11 +74,29 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 		})
 	}
 
+	// Check for multipart file first
+	file, err := c.FormFile("file")
+	if err == nil {
+		// Multipart upload
+		asset, err := h.videoUC.UploadVideoFile(c.Request().Context(), lessonID, file)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"success": false,
+				"error":   map[string]string{"message": err.Error()},
+			})
+		}
+		return c.JSON(http.StatusCreated, map[string]interface{}{
+			"success": true,
+			"data":    asset,
+		})
+	}
+
+	// Fallback to JSON body (URL)
 	var req UploadVideoRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
-			"error":   map[string]string{"message": "Invalid request body"},
+			"error":   map[string]string{"message": "Invalid request body or missing file"},
 		})
 	}
 
@@ -317,4 +341,62 @@ func (h *VideoHandler) RotateKey(c echo.Context) error {
 		"success": true,
 		"message": "Encryption key rotated",
 	})
+}
+
+// ServeHLS serves HLS content from S3 with token validation and manifest rewriting
+func (h *VideoHandler) ServeHLS(c echo.Context) error {
+	videoID, err := uuid.Parse(c.Param("videoId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid video id"})
+	}
+	file := c.Param("*")
+	token := c.QueryParam("token")
+
+	// Validate token
+	if token == "" {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "missing token"})
+	}
+	if err := h.videoUC.ValidatePlayback(c.Request().Context(), token); err != nil {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "invalid or expired token"})
+	}
+
+	// Fetch stream
+	stream, contentType, err := h.videoUC.GetVideoSegment(c.Request().Context(), videoID, file)
+	if err != nil {
+		return c.NoContent(http.StatusNotFound)
+	}
+	defer stream.Close()
+
+	// Rewrite m3u8 playlist to inject token into key URI and segments
+	if strings.HasSuffix(file, ".m3u8") {
+		content, err := io.ReadAll(stream)
+		if err != nil {
+			return err
+		}
+
+		lines := strings.Split(string(content), "\n")
+		var newLines []string
+		for _, line := range lines {
+			if strings.HasPrefix(line, "#EXT-X-KEY") {
+				// Replace key URI with tokenized URI
+				// Search for known pattern /key/<videoID> and replace with /key/<token>
+				search := fmt.Sprintf("/key/%s", videoID.String())
+				replace := fmt.Sprintf("/key/%s", token)
+				line = strings.Replace(line, search, replace, 1)
+			} else if !strings.HasPrefix(line, "#") && strings.TrimSpace(line) != "" {
+				// Append token to segment URL
+				if strings.Contains(line, "?") {
+					line = fmt.Sprintf("%s&token=%s", line, token)
+				} else {
+					line = fmt.Sprintf("%s?token=%s", line, token)
+				}
+			}
+			newLines = append(newLines, line)
+		}
+
+		output := strings.Join(newLines, "\n")
+		return c.Blob(http.StatusOK, contentType, []byte(output))
+	}
+
+	return c.Stream(http.StatusOK, contentType, stream)
 }

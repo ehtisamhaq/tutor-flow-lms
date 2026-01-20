@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { CartItem, useCartStore } from "@/store/cart-store";
 
+// Backend returns full Cart object
+interface Cart {
+  id: string;
+  items: CartItem[];
+}
+
 interface AddToCartButtonProps {
   courseId: string;
 }
@@ -14,19 +20,21 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ courseId }: AddToCartButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
-  const { addItem } = useCartStore();
+  const { setItems } = useCartStore();
 
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post<{ data: CartItem }>("/cart/items", {
+      // Backend returns full Cart object with items array
+      const response = await api.post<Cart>("/cart/items", {
         course_id: courseId,
       });
-      const item = response.data.data;
-      addItem(item);
+      // Set all items from the updated cart
+      setItems(response.data.items || []);
       setIsAdded(true);
       toast.success("Added to cart!");
     } catch (error: unknown) {
+      console.log(error);
       const err = error as {
         response?: { data?: { error?: { message?: string } } };
       };

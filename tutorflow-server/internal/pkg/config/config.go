@@ -59,6 +59,9 @@ type StorageConfig struct {
 	S3Bucket   string `mapstructure:"s3_bucket"`
 	S3Region   string `mapstructure:"s3_region"`
 	S3Endpoint string `mapstructure:"s3_endpoint"`
+	AccessKey  string `mapstructure:"access_key"`
+	SecretKey  string `mapstructure:"secret_key"`
+	UseSSL     bool   `mapstructure:"use_ssl"`
 	CDNBaseURL string `mapstructure:"cdn_base_url"`
 }
 
@@ -151,6 +154,8 @@ func setDefaults() {
 	// Storage
 	viper.SetDefault("storage.driver", "local")
 	viper.SetDefault("storage.local_path", "./uploads")
+	viper.SetDefault("storage.s3_region", "us-east-1")
+	viper.SetDefault("storage.use_ssl", true)
 
 	// Redis
 	viper.SetDefault("redis.host", "localhost")

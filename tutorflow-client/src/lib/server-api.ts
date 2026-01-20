@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 // Server-side API utilities for SSR data fetching
 const BACKEND_URL =
   process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
@@ -5,8 +7,9 @@ const BACKEND_URL =
 // Internal fetch that hits the backend directly (used by Proxy and can be used by SSR)
 async function internalFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T | null> {
+  let responseStatus = 0;
   try {
     const response = await fetch(`${BACKEND_URL}${endpoint}`, {
       ...options,
@@ -16,32 +19,51 @@ async function internalFetch<T>(
       },
     });
 
+    responseStatus = response.status;
+
     if (!response.ok) {
+      if (response.status === 401) {
+        // Fall through to 401 check outside try/catch
+      } else {
+        return null;
+      }
+    } else {
+      const json = await response.json();
+
+      // If it's a paginated response, wrap it in our PaginatedResponse structure
+      if (json.meta) {
+        return {
+          items: json.data,
+          total: json.meta.total,
+          page: json.meta.page,
+          limit: json.meta.per_page,
+          total_pages: json.meta.total_pages,
+        } as any;
+      }
+
+      return json.data;
+    }
+  } catch (error) {
+    // If it's already a redirect error or other Next.js specific error, let it bubble
+    if (error && typeof error === "object" && "digest" in error) {
+      throw error;
+    }
+    // Only return null for non-401 non-redirect errors
+    if (responseStatus !== 401) {
       return null;
     }
-
-    const json = await response.json();
-
-    // If it's a paginated response, wrap it in our PaginatedResponse structure
-    if (json.meta) {
-      return {
-        items: json.data,
-        total: json.meta.total,
-        page: json.meta.page,
-        limit: json.meta.per_page,
-        total_pages: json.meta.total_pages,
-      } as any;
-    }
-
-    return json.data;
-  } catch (error) {
-    return null;
   }
+
+  if (responseStatus === 401) {
+    redirect("/login");
+  }
+
+  return null;
 }
 
 export async function serverFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T | null> {
   return internalFetch<T>(endpoint, options);
 }
@@ -50,7 +72,7 @@ export async function serverFetch<T>(
 export async function authServerFetch<T>(
   endpoint: string,
   options: RequestInit = {},
-  revalidate: number | false = 60
+  revalidate: number | false = 60,
 ): Promise<T | null> {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
@@ -65,7 +87,7 @@ export async function authServerFetch<T>(
   }
 
   // Add session ID if it exists
-  const sessionId = cookieStore.get("sessionId")?.value;
+  const sessionId = cookieStore.get("session_id")?.value;
   if (sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
@@ -132,64 +154,6 @@ export interface PaginatedResponse<T> {
 }
 
 // Mock data for when the API is unavailable
-const MOCK_COURSES: Course[] = [
-  {
-    id: "1",
-    title: "Complete Web Development Bootcamp",
-    slug: "complete-web-development-bootcamp",
-    description:
-      "Learn web development from scratch with HTML, CSS, JavaScript, React, Node.js, and more.",
-    thumbnail_url: undefined,
-    price: 99.99,
-    discount_price: 49.99,
-    level: "beginner",
-    duration_hours: 48,
-    rating: 4.8,
-    total_students: 12500,
-    instructor: {
-      id: "1",
-      first_name: "John",
-      last_name: "Doe",
-    },
-  },
-  {
-    id: "2",
-    title: "Advanced React Patterns",
-    slug: "advanced-react-patterns",
-    description:
-      "Master advanced React patterns including hooks, context, and performance optimization.",
-    thumbnail_url: undefined,
-    price: 79.99,
-    level: "advanced",
-    duration_hours: 24,
-    rating: 4.9,
-    total_students: 5200,
-    instructor: {
-      id: "2",
-      first_name: "Jane",
-      last_name: "Smith",
-    },
-  },
-  {
-    id: "3",
-    title: "Python for Data Science",
-    slug: "python-for-data-science",
-    description:
-      "Learn Python programming for data science, machine learning, and analytics.",
-    thumbnail_url: undefined,
-    price: 89.99,
-    discount_price: 59.99,
-    level: "intermediate",
-    duration_hours: 36,
-    rating: 4.7,
-    total_students: 8900,
-    instructor: {
-      id: "3",
-      first_name: "Alex",
-      last_name: "Johnson",
-    },
-  },
-];
 
 export const serverApi = {
   courses: {
@@ -201,32 +165,21 @@ export const serverApi = {
       const result = await serverFetch<PaginatedResponse<Course>>(
         `/courses?page=${params?.page || 1}&limit=${params?.limit || 12}${
           params?.search ? `&search=${params.search}` : ""
-        }`
+        }`,
       );
 
-      // Return mock data if API is unavailable
-      if (!result) {
-        return {
-          items: MOCK_COURSES,
-          total: MOCK_COURSES.length,
+      return (
+        result || {
+          items: [],
+          total: 0,
           page: params?.page || 1,
           limit: params?.limit || 12,
-        };
-      }
-
-      return result;
+        }
+      );
     },
 
     getBySlug: async (slug: string) => {
-      const result = await serverFetch<Course>(`/courses/${slug}`);
-
-      // Return mock course if API is unavailable
-      if (!result) {
-        const mockCourse = MOCK_COURSES.find((c) => c.slug === slug);
-        return mockCourse || MOCK_COURSES[0];
-      }
-
-      return result;
+      return serverFetch<Course>(`/courses/${slug}`);
     },
   },
 

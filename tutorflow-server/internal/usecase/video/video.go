@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +24,7 @@ type videoUseCase struct {
 	videoRepo      repository.VideoRepository
 	lessonRepo     repository.LessonRepository
 	enrollmentRepo repository.EnrollmentRepository
+	storageService domain.StorageService
 	config         domain.HLSConfig
 	signingSecret  string
 }
@@ -31,12 +34,14 @@ func NewUseCase(
 	videoRepo repository.VideoRepository,
 	lessonRepo repository.LessonRepository,
 	enrollmentRepo repository.EnrollmentRepository,
+	storageService domain.StorageService,
 	signingSecret string,
 ) domain.VideoUseCase {
 	return &videoUseCase{
 		videoRepo:      videoRepo,
 		lessonRepo:     lessonRepo,
 		enrollmentRepo: enrollmentRepo,
+		storageService: storageService,
 		config:         domain.DefaultHLSConfig(),
 		signingSecret:  signingSecret,
 	}
@@ -75,6 +80,18 @@ func (uc *videoUseCase) UploadVideo(ctx context.Context, lessonID uuid.UUID, fil
 	}()
 
 	return asset, nil
+}
+
+// UploadVideoFile uploads a video file via multipart form
+func (uc *videoUseCase) UploadVideoFile(ctx context.Context, lessonID uuid.UUID, file *multipart.FileHeader) (*domain.HLSVideoAsset, error) {
+	// Upload to storage (temp location)
+	url, err := uc.storageService.UploadVideo(ctx, file, "uploads/videos")
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload video file: %w", err)
+	}
+
+	// Delegate to standard UploadVideo logic
+	return uc.UploadVideo(ctx, lessonID, url)
 }
 
 // ProcessVideo processes a video into HLS format
@@ -145,14 +162,17 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 	segmentPath := filepath.Join(outputDir, "segment_%03d.ts")
 
 	// Verify input file exists (if local)
-	if _, err := os.Stat(asset.OriginalURL); os.IsNotExist(err) {
-		// If it's a URL, ffmpeg can handle it, but if it expects a local file...
-		// For now assume local file path from upload.
-		// If it's "uploads/..." we might need absolute path.
-		// Let's assume absolute path is needed if it's relative.
-		if !filepath.IsAbs(asset.OriginalURL) {
-			cwd, _ := os.Getwd()
-			asset.OriginalURL = filepath.Join(cwd, asset.OriginalURL)
+	isRemote := strings.HasPrefix(asset.OriginalURL, "http://") || strings.HasPrefix(asset.OriginalURL, "https://")
+	if !isRemote {
+		if _, err := os.Stat(asset.OriginalURL); os.IsNotExist(err) {
+			// If it's a URL, ffmpeg can handle it, but if it expects a local file...
+			// For now assume local file path from upload.
+			// If it's "uploads/..." we might need absolute path.
+			// Let's assume absolute path is needed if it's relative.
+			if !filepath.IsAbs(asset.OriginalURL) {
+				cwd, _ := os.Getwd()
+				asset.OriginalURL = filepath.Join(cwd, asset.OriginalURL)
+			}
 		}
 	}
 
@@ -210,16 +230,57 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 		}
 	}
 
-	// 7. Update Asset
+	// 7. Upload to S3 if configured
+	// We check if driver is s3 using config (or just call UploadHLSFiles which handles it)
+	// But we need a prefix for S3. Let's use "hls/{videoID}"
+	s3Prefix := fmt.Sprintf("hls/%s", videoID)
+	if err := uc.storageService.UploadHLSFiles(ctx, outputDir, s3Prefix); err != nil {
+		return uc.handleProcessingError(ctx, asset, fmt.Errorf("failed to upload HLS files: %w", err))
+	}
+
+	// 8. Update Asset
 	asset.Status = domain.VideoStatusCompleted
 	asset.Duration = 600           // TODO: Parse from ffmpeg output
 	asset.Resolution = "1920x1080" // TODO: Parse
 	asset.UpdatedAt = time.Now()
 
-	// Update generic playlist URL (fake CDN)
-	// In reality this would be /uploads/hls/<id>/index.m3u8 served statically or via endpoint
-	// Assuming we serve static files from /uploads
-	// playlistURL assignment removed as it was unused
+	// Update playlist URL to point to S3/CDN
+	// If S3, the URL is s3Endpoint/bucket/hls/{videoID}/index.m3u8 or cdnBase/hls/{videoID}/index.m3u8
+	// We can trust the storage service/config to know the base.
+	// But `UploadHLSFiles` doesn't return the URL.
+	// We can construct it.
+	// However, the `VideoQuality` struct has `PlaylistURL`. We should populate that?
+	// The current code doesn't create `VideoQuality` records yet.
+	// Let's at least update the asset to be ready.
+	// The `GetPlaybackURL` function generates a URL pointing to `/api/v1/videos/stream/...`
+	// which presumably proxies or redirects?
+	// Actually `GetPlaybackURL` returns `/api/v1/videos/stream/%s/index.m3u8?token=%s`
+	// And the handler needs to serve the content.
+	// If we use S3, we might want `GetPlaybackURL` to return a signed S3 URL or
+	// we keep using the proxy to enforce our token auth?
+	//
+	// Strategy:
+	// The frontend requests /api/v1/videos/stream/:id/index.m3u8?token=...
+	// The BACKEND handler receives this.
+	// It validates the token.
+	// Then it needs to serve the m3u8.
+	// If stored on S3, the backend can:
+	// A) Proxy the content (read from S3, write to response) - simpler, uses server BW.
+	// B) Redirect to a presigned S3 URL - better for performance, but need to handle encryption keys carefully.
+	//
+	// Given we have AES encryption, the m3u8 itself isn't sensitive, but the KEY is.
+	// The KEY inside m3u8 points to /api/v1/drm/key/...
+	// So we can redirect to S3 for segments and m3u8.
+	//
+	// For now, let's assume the existing `GetPlaybackURL` flow works for the player to START.
+	// But `GetPlaybackURL` returns a URL that points to `playbackURL`.
+	// We need to implement the Handler for `/api/v1/videos/stream/...` to serve the files.
+	// The current code lacks that handler! Run `grep` showed "videos.GET("/lessons/:lessonId/playback", h.GetPlaybackURL)"
+	// But where is the route for `fmt.Sprintf("/api/v1/videos/stream/%s/index.m3u8?token=%s", asset.ID, token)`?
+	// It seems missing!
+	//
+	// We need to ADD a handler to serve the HLS content (proxy from S3).
+	// But first, let's finish the upload part.
 
 	return uc.videoRepo.UpdateAsset(ctx, asset)
 }
@@ -467,6 +528,13 @@ func (uc *videoUseCase) ValidateDeviceLimit(ctx context.Context, userID uuid.UUI
 	}
 
 	return nil
+}
+
+// GetVideoSegment returns a stream for a video segment or playlist
+func (uc *videoUseCase) GetVideoSegment(ctx context.Context, videoID uuid.UUID, segment string) (io.ReadCloser, string, error) {
+	// Construct path: "hls/<videoID>/<segment>"
+	path := fmt.Sprintf("hls/%s/%s", videoID.String(), segment)
+	return uc.storageService.GetFileStream(ctx, path)
 }
 
 // Helper to generate signed token

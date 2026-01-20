@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"io"
+	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
@@ -134,6 +136,7 @@ type DeviceSession struct {
 type VideoUseCase interface {
 	// Upload & Processing
 	UploadVideo(ctx context.Context, lessonID uuid.UUID, fileURL string) (*HLSVideoAsset, error)
+	UploadVideoFile(ctx context.Context, lessonID uuid.UUID, file *multipart.FileHeader) (*HLSVideoAsset, error)
 	ProcessVideo(ctx context.Context, videoID uuid.UUID) error
 	GetProcessingStatus(ctx context.Context, videoID uuid.UUID) (*HLSVideoAsset, error)
 
@@ -141,6 +144,7 @@ type VideoUseCase interface {
 	GetPlaybackURL(ctx context.Context, lessonID, userID uuid.UUID, deviceID string) (string, error)
 	GetEncryptionKey(ctx context.Context, token string) ([]byte, error)
 	ValidatePlayback(ctx context.Context, token string) error
+	GetVideoSegment(ctx context.Context, videoID uuid.UUID, segment string) (io.ReadCloser, string, error)
 
 	// DRM
 	EnableEncryption(ctx context.Context, videoID uuid.UUID, encType HLSEncryptionType) error

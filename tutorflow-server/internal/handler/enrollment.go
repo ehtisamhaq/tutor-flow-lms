@@ -23,9 +23,11 @@ func NewEnrollmentHandler(enrollmentUC *enrollment.UseCase) *EnrollmentHandler {
 
 // RegisterRoutes registers enrollment routes
 func (h *EnrollmentHandler) RegisterRoutes(g *echo.Group, authMW, managerMW echo.MiddlewareFunc) {
-	g.GET("", h.List, authMW, managerMW)
+	g.GET("/dashboard-stats", h.GetDashboardStats, authMW)
 	g.GET("/my", h.MyEnrollments, authMW)
+	g.GET("", h.List, authMW, managerMW)
 	g.POST("", h.Enroll, authMW)
+	g.GET("/course/:slug", h.GetByCourseSlug, authMW)
 	g.GET("/:id", h.GetByID, authMW)
 	g.PATCH("/:id/cancel", h.Cancel, authMW)
 	g.GET("/:id/progress", h.GetProgress, authMW)
@@ -73,6 +75,24 @@ func (h *EnrollmentHandler) MyEnrollments(c echo.Context) error {
 	}
 
 	return response.Paginated(c, enrollments, page, limit, total)
+}
+
+// GetDashboardStats godoc
+// @Summary Get student dashboard stats
+// @Tags Enrollments
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} response.Response{data=domain.StudentDashboardStats}
+// @Router /enrollments/stats [get]
+func (h *EnrollmentHandler) GetDashboardStats(c echo.Context) error {
+	claims, _ := middleware.GetClaims(c)
+
+	stats, err := h.enrollmentUC.GetDashboardStats(c.Request().Context(), claims.UserID)
+	if err != nil {
+		return response.InternalError(c, "Failed to get dashboard stats")
+	}
+
+	return response.Success(c, stats)
 }
 
 // Enroll godoc
@@ -285,4 +305,30 @@ func (h *EnrollmentHandler) UpdateVideoPosition(c echo.Context) error {
 	}
 
 	return response.SuccessWithMessage(c, "Position updated", nil)
+}
+
+// GetByCourseSlug godoc
+// @Summary Get enrollment by course slug
+// @Tags Enrollments
+// @Security BearerAuth
+// @Produce json
+// @Param slug path string true "Course Slug"
+// @Success 200 {object} response.Response{data=domain.Enrollment}
+// @Router /enrollments/course/{slug} [get]
+func (h *EnrollmentHandler) GetByCourseSlug(c echo.Context) error {
+	slug := c.Param("slug")
+	claims, _ := middleware.GetClaims(c)
+
+	enroll, err := h.enrollmentUC.GetByCourseSlug(c.Request().Context(), claims.UserID, slug)
+	if err != nil {
+		if err == domain.ErrNotEnrolled {
+			return response.NotFound(c, "Not enrolled in this course")
+		}
+		if err == domain.ErrCourseNotFound {
+			return response.NotFound(c, "Course not found")
+		}
+		return response.InternalError(c, "Failed to get enrollment")
+	}
+
+	return response.Success(c, enroll)
 }

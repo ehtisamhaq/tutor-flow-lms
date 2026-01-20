@@ -108,6 +108,10 @@ func (a *App) Run() error {
 		})
 	})
 
+	// Webhook (no group, no auth) - to catch stripe listen forward
+	// We'll use the order handler's webhook as the main entry point
+	// after it's initialized
+
 	// Initialize JWT Manager
 	jwtManager := jwt.NewManager(a.cfg.JWT)
 
@@ -176,7 +180,7 @@ func (a *App) Run() error {
 	announcementUC := announcement.NewUseCase(announcementRepo, courseRepo, enrollmentRepo, notificationRepo)
 	messageUC := message.NewUseCase(messageRepo, userRepo)
 	learningPathUC := learningpath.NewUseCase(learningPathRepo, enrollmentRepo, certRepo)
-	videoUC := video.NewUseCase(videoRepo, lessonRepo, enrollmentRepo, a.cfg.JWT.Secret)
+	videoUC := video.NewUseCase(videoRepo, lessonRepo, enrollmentRepo, storageSvc, a.cfg.JWT.Secret)
 	subscriptionUC := subscription.NewUseCase(subscriptionRepo, userRepo)
 	refundUC := refund.NewUseCase(refundRepo, orderRepo, enrollmentRepo)
 	bundleUC := bundle.NewUseCase(bundleRepo, courseRepo, orderRepo, enrollmentRepo)
@@ -207,6 +211,9 @@ func (a *App) Run() error {
 	refundHandler := handler.NewRefundHandler(refundUC)
 	bundleHandler := handler.NewBundleHandler(bundleUC)
 	peerReviewHandler := handler.NewPeerReviewHandler(peerReviewUC)
+
+	// Register root webhook
+	a.echo.POST("/webhook", orderHandler.HandleWebhook)
 
 	// Middleware functions
 	authMW := appMiddleware.AuthMiddleware(jwtManager)

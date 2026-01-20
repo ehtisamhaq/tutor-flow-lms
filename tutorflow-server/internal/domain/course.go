@@ -72,7 +72,7 @@ type Course struct {
 	// Relationships
 	Instructor  *User          `gorm:"foreignKey:InstructorID" json:"instructor,omitempty"`
 	Categories  []Category     `gorm:"many2many:course_categories" json:"categories,omitempty"`
-	Modules     []Module       `gorm:"foreignKey:CourseID" json:"modules,omitempty"`
+	Modules     []Module       `gorm:"foreignKey:CourseID" json:"modules"`
 	Enrollments []Enrollment   `gorm:"foreignKey:CourseID" json:"enrollments,omitempty"`
 	Reviews     []CourseReview `gorm:"foreignKey:CourseID" json:"reviews,omitempty"`
 }
@@ -114,7 +114,7 @@ type Module struct {
 	UpdatedAt   time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	Course  *Course  `gorm:"foreignKey:CourseID" json:"course,omitempty"`
-	Lessons []Lesson `gorm:"foreignKey:ModuleID" json:"lessons,omitempty"`
+	Lessons []Lesson `gorm:"foreignKey:ModuleID" json:"lessons"`
 }
 
 // CourseRepository interface

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,8 +41,9 @@ import {
   updateLessonAction,
   deleteLessonAction,
   publishCourseAction,
-} from "@/app/tutor/courses/actions";
+} from "@/app/(dashboard)/tutor/courses/lib/actions";
 import { QuizEditor } from "./quiz-editor";
+import React from "react";
 // import { courseApi } from "@/lib/course-api"; // Migrated to Server Actions
 
 // Validation schema
@@ -82,11 +83,13 @@ interface CourseFormProps {
     status?: "draft" | "published" | "archived";
   };
   initialModules?: Module[];
+  basePath?: string;
 }
 
 export function CourseForm({
   initialData,
   initialModules = [],
+  basePath = "/tutor",
 }: CourseFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -95,19 +98,29 @@ export function CourseForm({
 
   // Delete Module State
   const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
+  // Track initialModules by their IDs to avoid unnecessary re-syncs
+  const prevModuleIdsRef = useRef<string>("");
 
   useEffect(() => {
-    // Preserve isExpanded state when server data updates
-    setModules((prevModules) => {
-      const expandedState = new Map(
-        prevModules.map((m) => [m.id, m.isExpanded])
-      );
+    // Create a stable key from module IDs
+    const currentIds = initialModules.map((m) => m.id).join(",");
 
-      return initialModules.map((m) => ({
-        ...m,
-        isExpanded: expandedState.get(m.id) || false,
-      }));
-    });
+    // Only update if IDs actually changed
+    if (currentIds !== prevModuleIdsRef.current) {
+      prevModuleIdsRef.current = currentIds;
+
+      // Preserve isExpanded state when server data updates
+      setModules((prevModules) => {
+        const expandedState = new Map(
+          prevModules.map((m) => [m.id, m.isExpanded]),
+        );
+
+        return initialModules.map((m) => ({
+          ...m,
+          isExpanded: expandedState.get(m.id) || false,
+        }));
+      });
+    }
   }, [initialModules]);
 
   const {
@@ -193,15 +206,15 @@ export function CourseForm({
   const toggleModule = (moduleId: string) => {
     setModules(
       modules.map((m) =>
-        m.id === moduleId ? { ...m, isExpanded: !m.isExpanded } : m
-      )
+        m.id === moduleId ? { ...m, isExpanded: !m.isExpanded } : m,
+      ),
     );
   };
 
   // Lesson management
   const addLesson = async (
     moduleId: string,
-    type: "video" | "text" | "quiz"
+    type: "video" | "text" | "quiz",
   ) => {
     if (!initialData?.id) return;
     try {
@@ -235,7 +248,7 @@ export function CourseForm({
   const saveLesson = async (
     moduleId: string,
     lessonId: string,
-    data: Partial<Lesson>
+    data: Partial<Lesson>,
   ) => {
     try {
       await updateLessonAction(moduleId, lessonId, data);
@@ -249,7 +262,7 @@ export function CourseForm({
     moduleId: string,
     lessonId: string,
     field: keyof Lesson,
-    value: any
+    value: any,
   ) => {
     setModules(
       modules.map((m) => {
@@ -257,12 +270,12 @@ export function CourseForm({
           return {
             ...m,
             lessons: m.lessons.map((l) =>
-              l.id === lessonId ? { ...l, [field]: value } : l
+              l.id === lessonId ? { ...l, [field]: value } : l,
             ),
           };
         }
         return m;
-      })
+      }),
     );
   };
 
@@ -307,9 +320,9 @@ export function CourseForm({
         toast.success(
           initialData?.id
             ? "Course updated successfully"
-            : "Course created successfully"
+            : "Course created successfully",
         );
-        router.push("/tutor/courses");
+        router.push(`${basePath}/courses`);
       } else {
         // Robust error handling for Server Action result
         if (result.error?.code === "VALIDATION_ERROR") {
@@ -334,7 +347,7 @@ export function CourseForm({
     if (!initialData?.id) return;
 
     const confirm = window.confirm(
-      "Are you sure you want to publish this course? It will be visible to all students."
+      "Are you sure you want to publish this course? It will be visible to all students.",
     );
     if (!confirm) return;
 
@@ -589,7 +602,7 @@ export function CourseForm({
                                         module.id,
                                         lesson.id,
                                         "title",
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     onBlur={() =>
@@ -607,7 +620,7 @@ export function CourseForm({
                                         module.id,
                                         lesson.id,
                                         "duration_minutes",
-                                        parseInt(e.target.value) || 0
+                                        parseInt(e.target.value) || 0,
                                       )
                                     }
                                     onBlur={() =>
@@ -646,7 +659,7 @@ export function CourseForm({
                                           module.id,
                                           lesson.id,
                                           "video_url",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       onBlur={() =>
@@ -666,7 +679,7 @@ export function CourseForm({
                                           module.id,
                                           lesson.id,
                                           "content",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       onBlur={() =>
@@ -756,7 +769,7 @@ export function CourseForm({
       {/* Submit */}
       <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
         <Button type="button" variant="outline" asChild>
-          <a href="/tutor/courses">Cancel</a>
+          <a href={`${basePath}/courses`}>Cancel</a>
         </Button>
 
         {initialData?.id && initialData.status === "draft" && (
@@ -774,8 +787,8 @@ export function CourseForm({
           {isLoading
             ? "Saving..."
             : initialData?.id
-            ? "Update Course"
-            : "Create Course"}
+              ? "Update Course"
+              : "Create Course"}
         </Button>
       </div>
     </form>

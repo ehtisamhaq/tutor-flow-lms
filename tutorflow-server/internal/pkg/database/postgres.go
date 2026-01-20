@@ -54,6 +54,11 @@ func AutoMigrate(db *gorm.DB) error {
 		&domain.Module{},
 		&domain.Lesson{},
 		&domain.VideoAsset{},
+		&domain.HLSVideoAsset{},
+		&domain.VideoQuality{},
+		&domain.VideoEncryption{},
+		&domain.SignedURL{},
+		&domain.DeviceSession{},
 
 		// Enrollments
 		&domain.Enrollment{},

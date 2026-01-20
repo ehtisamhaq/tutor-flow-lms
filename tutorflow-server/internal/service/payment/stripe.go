@@ -3,6 +3,7 @@ package payment
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/checkout/session"
@@ -62,19 +63,28 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, input CreateCheckou
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 	for _, item := range input.Items {
 		images := []*string{}
-		if item.ImageURL != "" {
-			images = append(images, stripe.String(item.ImageURL))
+		trimmedURL := strings.TrimSpace(item.ImageURL)
+		// Stripe requires valid public URLs. Skip if empty or common JS "empty" strings.
+		if trimmedURL != "" && trimmedURL != "null" && trimmedURL != "undefined" {
+			images = append(images, stripe.String(trimmedURL))
+		}
+
+		fmt.Printf("[STRIPE DEBUG] LineItem: %s, Price: %d, ImageURL: '%s' (trimmed: '%s', appended: %v)\n",
+			item.Name, item.Amount, item.ImageURL, trimmedURL, len(images) > 0)
+
+		productData := &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+			Name:        stripe.String(item.Name),
+			Description: stripe.String(item.Description),
+		}
+		if len(images) > 0 {
+			productData.Images = images
 		}
 
 		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-				Currency: stripe.String("usd"),
-				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-					Name:        stripe.String(item.Name),
-					Description: stripe.String(item.Description),
-					Images:      images,
-				},
-				UnitAmount: stripe.Int64(item.Amount),
+				Currency:    stripe.String("usd"),
+				ProductData: productData,
+				UnitAmount:  stripe.Int64(item.Amount),
 			},
 			Quantity: stripe.Int64(item.Quantity),
 		})
@@ -93,6 +103,11 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, input CreateCheckou
 	}
 
 	return session.New(params)
+}
+
+// GetCheckoutSession retrieves a Stripe Checkout session
+func (s *Service) GetCheckoutSession(ctx context.Context, sessionID string) (*stripe.CheckoutSession, error) {
+	return session.Get(sessionID, nil)
 }
 
 // CreatePaymentIntentInput for payment intent
