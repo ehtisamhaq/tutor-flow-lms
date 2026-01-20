@@ -80,7 +80,9 @@ export function ProtectedVideoPlayer({
         const deviceId = generateDeviceFingerprint();
 
         // Register device and get signed URL
-        const response = await api.post("/drm/authorize", {
+        const response = await api.post<{
+          data: { signed_url: string; authorized: boolean };
+        }>("/drm/authorize", {
           lesson_id: lessonId,
           course_id: courseId,
           device_id: deviceId,

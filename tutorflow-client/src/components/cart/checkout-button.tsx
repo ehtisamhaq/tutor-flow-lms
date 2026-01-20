@@ -11,6 +11,12 @@ interface CheckoutButtonProps {
   total: number;
 }
 
+interface CheckoutResponse {
+  data: {
+    checkout_url: string;
+  };
+}
+
 export function CheckoutButton({ total }: CheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -19,7 +25,7 @@ export function CheckoutButton({ total }: CheckoutButtonProps) {
   const handleCheckout = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post("/orders/checkout");
+      const response = await api.post<CheckoutResponse>("/orders/checkout", {});
       const { checkout_url } = response.data.data;
 
       if (checkout_url) {

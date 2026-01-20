@@ -18,12 +18,12 @@ export function RefundActions({ refundId }: RefundActionsProps) {
   const handleAction = async (action: "approve" | "reject") => {
     setLoading(action);
     try {
-      await api.post(`/admin/refunds/${refundId}/${action}`);
+      await api.post(`/admin/refunds/${refundId}/${action}`, {});
       toast.success(`Refund ${action}d successfully`);
       router.refresh();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error?.message || `Failed to ${action} refund`
+        error.response?.data?.error?.message || `Failed to ${action} refund`,
       );
     } finally {
       setLoading(null);

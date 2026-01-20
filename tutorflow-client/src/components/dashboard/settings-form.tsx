@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuthStore, User } from "@/store/auth-store";
 import api from "@/lib/api";
 
 const profileSchema = z.object({
@@ -41,7 +41,7 @@ export function SettingsForm() {
 
     setIsLoading(true);
     try {
-      const response = await api.put(`/users/${user.id}`, data);
+      const response = await api.put<{ data: User }>(`/users/${user.id}`, data);
       setUser(response.data.data);
       toast.success("Profile updated successfully");
     } catch (error: unknown) {
@@ -49,7 +49,7 @@ export function SettingsForm() {
         response?: { data?: { error?: { message?: string } } };
       };
       toast.error(
-        err.response?.data?.error?.message || "Failed to update profile"
+        err.response?.data?.error?.message || "Failed to update profile",
       );
     } finally {
       setIsLoading(false);

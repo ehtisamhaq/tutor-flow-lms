@@ -1,5 +1,7 @@
 # tutor-flow-lms
 
+docker compose up --build
+
 # Backend
 
 cd tutorflow-server

@@ -5,7 +5,7 @@ import { ShoppingCart, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
-import { useCartStore } from "@/store/cart-store";
+import { CartItem, useCartStore } from "@/store/cart-store";
 
 interface AddToCartButtonProps {
   courseId: string;
@@ -19,7 +19,9 @@ export function AddToCartButton({ courseId }: AddToCartButtonProps) {
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post("/cart/items", { course_id: courseId });
+      const response = await api.post<{ data: CartItem }>("/cart/items", {
+        course_id: courseId,
+      });
       const item = response.data.data;
       addItem(item);
       setIsAdded(true);
@@ -29,7 +31,7 @@ export function AddToCartButton({ courseId }: AddToCartButtonProps) {
         response?: { data?: { error?: { message?: string } } };
       };
       toast.error(
-        err.response?.data?.error?.message || "Failed to add to cart"
+        err.response?.data?.error?.message || "Failed to add to cart",
       );
     } finally {
       setIsLoading(false);

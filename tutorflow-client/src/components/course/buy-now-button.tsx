@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
-import { useCartStore } from "@/store/cart-store";
+import { CartItem, useCartStore } from "@/store/cart-store";
 
 interface BuyNowButtonProps {
   courseId: string;
@@ -20,7 +20,9 @@ export function BuyNowButton({ courseId }: BuyNowButtonProps) {
     setIsLoading(true);
     try {
       // 1. Add to cart
-      const response = await api.post("/cart/items", { course_id: courseId });
+      const response = await api.post<{ data: CartItem }>("/cart/items", {
+        course_id: courseId,
+      });
       const item = response.data.data;
       addItem(item);
 
@@ -31,7 +33,7 @@ export function BuyNowButton({ courseId }: BuyNowButtonProps) {
         response?: { data?: { error?: { message?: string } } };
       };
       toast.error(
-        err.response?.data?.error?.message || "Failed to initiate purchase"
+        err.response?.data?.error?.message || "Failed to initiate purchase",
       );
     } finally {
       setIsLoading(false);

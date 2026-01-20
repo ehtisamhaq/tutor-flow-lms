@@ -45,10 +45,10 @@ export default function NewBundlePage() {
 
     try {
       const response = await api.get(
-        `/search?q=${encodeURIComponent(searchQuery)}`
+        `/search?q=${encodeURIComponent(searchQuery)}`,
       );
       // Go backend SearchResult has 'courses' field
-      setSearchResults(response.data.data.courses || []);
+      setSearchResults((response.data as any).data.courses || []);
     } catch (error) {
       console.error("Search failed:", error);
     }
@@ -95,7 +95,7 @@ export default function NewBundlePage() {
       router.refresh();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error?.message || "Failed to create bundle"
+        error.response?.data?.error?.message || "Failed to create bundle",
       );
     } finally {
       setLoading(false);
