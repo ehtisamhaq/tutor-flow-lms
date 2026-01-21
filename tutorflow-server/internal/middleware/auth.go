@@ -22,18 +22,28 @@ func AuthMiddleware(jwtManager *jwt.Manager) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" {
-				c.Logger().Errorf("Auth error: Missing authorization header for path %s", c.Path())
-				return response.Unauthorized(c, "Missing authorization header")
+			tokenString := ""
+
+			if authHeader != "" {
+				// Extract token from "Bearer <token>"
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+					tokenString = parts[1]
+				}
 			}
 
-			// Extract token from "Bearer <token>"
-			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				return response.Unauthorized(c, "Invalid authorization header format")
+			// Fallback to cookie if header is missing or invalid
+			if tokenString == "" {
+				cookie, err := c.Cookie("accessToken")
+				if err == nil {
+					tokenString = cookie.Value
+				}
 			}
 
-			tokenString := parts[1]
+			if tokenString == "" {
+				c.Logger().Errorf("Auth error: Missing authorization header and cookie for path %s", c.Path())
+				return response.Unauthorized(c, "Missing authorization")
+			}
 
 			// Validate token
 			claims, err := jwtManager.ValidateToken(tokenString)

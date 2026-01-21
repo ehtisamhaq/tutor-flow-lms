@@ -99,6 +99,12 @@ export async function login(
   }
 }
 
+export async function getAccessToken() {
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  return cookieStore.get("accessToken")?.value;
+}
+
 export async function logout() {
   await deleteSession();
   redirect("/login");

@@ -49,6 +49,9 @@ func NewUseCase(
 
 // UploadVideo uploads a video for a lesson
 func (uc *videoUseCase) UploadVideo(ctx context.Context, lessonID uuid.UUID, fileURL string) (*domain.HLSVideoAsset, error) {
+	if fileURL == "" {
+		return nil, errors.New("file URL is empty")
+	}
 	// Check if video already exists for lesson
 	existing, _ := uc.videoRepo.GetAssetByLessonID(ctx, lessonID)
 	if existing != nil {
@@ -163,6 +166,13 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 
 	// 4. Download video if it's a URL
 	inputPath := asset.OriginalURL
+	fmt.Printf("ProcessVideo: Initial inputPath from OriginalURL: '%s'\n", inputPath)
+
+	if inputPath == "" {
+		fmt.Printf("ProcessVideo: Error - OriginalURL is empty for video %s\n", videoID)
+		return uc.handleProcessingError(ctx, asset, fmt.Errorf("OriginalURL is empty"))
+	}
+
 	isRemote := strings.HasPrefix(asset.OriginalURL, "http://") || strings.HasPrefix(asset.OriginalURL, "https://")
 
 	// Better isS3 detection: if it's remote and we are using S3 driver, or if it contains minio

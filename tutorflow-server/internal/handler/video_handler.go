@@ -78,6 +78,13 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 		})
 	}
 
+	fmt.Printf("UploadVideo: Received request. Method: %s, URI: %s, Content-Type: %s, BodyLength: %d\n",
+		c.Request().Method, c.Request().RequestURI, c.Request().Header.Get("Content-Type"), c.Request().ContentLength)
+
+	for k, v := range c.Request().Header {
+		fmt.Printf("Header: %s = %v\n", k, v)
+	}
+
 	// Check for multipart file first
 	file, err := c.FormFile("video")
 	if err == nil {
@@ -110,6 +117,13 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 	}
 
 	fmt.Printf("UploadVideo: Falling back to URL: '%s'\n", req.FileURL)
+	if req.FileURL == "" {
+		fmt.Printf("UploadVideo: Error - both multipart file and file_url are missing\n")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   map[string]string{"message": "No video file uploaded and no file_url provided"},
+		})
+	}
 	asset, err := h.videoUC.UploadVideo(c.Request().Context(), lessonID, req.FileURL)
 	if err != nil {
 		fmt.Printf("UploadVideo: UploadVideo failed: %v\n", err)

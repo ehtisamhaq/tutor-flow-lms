@@ -85,10 +85,12 @@ func (a *App) Run() error {
 	a.echo.HideBanner = true
 	a.echo.Use(middleware.RequestID())
 	a.echo.Use(middleware.Recover())
+	a.echo.Use(middleware.BodyLimit("500M"))
 	a.echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: a.cfg.Server.AllowedOrigins,
-		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Session-ID"},
+		AllowOrigins:     a.cfg.Server.AllowedOrigins,
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Session-ID"},
+		AllowCredentials: true,
 	}))
 	a.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `{"time":"${time_rfc3339}","id":"${id}","method":"${method}","uri":"${uri}","status":${status},"latency":"${latency_human}"}` + "\n",

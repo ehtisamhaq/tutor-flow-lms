@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import {
   Upload,
   X,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { Progress } from "../ui/progress";
+import { getAccessToken } from "@/app/(auth)/lib/actions";
 
 interface VideoUploaderProps {
   lessonId: string;
@@ -127,42 +129,32 @@ export function VideoUploader({
     formData.append("video", file);
 
     try {
-      // We use XHR here instead of fetch/api to get upload progress
-      const xhr = new XMLHttpRequest();
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("accessToken="))
-        ?.split("=")[1];
+      const token = await getAccessToken();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const uploadUrl = apiUrl.includes("/api/v1")
+        ? `${apiUrl}/videos/lessons/${lessonId}/upload`
+        : `${apiUrl.replace(/\/$/, "")}/api/v1/videos/lessons/${lessonId}/upload`;
 
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded * 100) / event.total);
-          setUploadProgress(progress);
-        }
-      };
+      console.log("Direct Upload URL:", uploadUrl);
+      console.log("Token retrieved from server action:", !!token);
 
-      const result = await new Promise<any>((resolve, reject) => {
-        xhr.open("POST", `/api/videos/lessons/${lessonId}/upload`);
-        if (token) {
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        }
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.response));
-            } catch (e) {
-              resolve(xhr.response);
-            }
-          } else {
-            reject(new Error(xhr.statusText || "Upload failed"));
+      const response = await axios.post(uploadUrl, formData, {
+        onUploadProgress: (progressEvent: any) => {
+          if (progressEvent.total) {
+            const progress = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            setUploadProgress(progress);
           }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(formData);
+        },
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        withCredentials: true,
       });
 
-      console.log({ result });
+      const result = response.data;
+      console.log({ uploadResult: result });
 
       if (result && result.success) {
         toast.success("Upload successful! Processing started...");
@@ -172,10 +164,18 @@ export function VideoUploader({
         toast.error(result?.error?.message || "Upload failed");
       }
     } catch (error: any) {
-      console.log({ error });
-      toast.error(error.message || "Upload failed");
+      console.error(
+        "Upload error details:",
+        error.response?.data || error.message,
+      );
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.message ||
+        "Upload failed";
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 

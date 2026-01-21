@@ -7,19 +7,18 @@ export async function createSession(accessToken: string, refreshToken: string) {
 
   cookieStore.set("accessToken", accessToken, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    // 1 hour expiry to match typical access token life, or handled by backend validation
     maxAge: 60 * 60,
   });
 
   cookieStore.set("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   });
 }
 
