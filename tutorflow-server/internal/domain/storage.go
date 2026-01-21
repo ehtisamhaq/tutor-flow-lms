@@ -13,8 +13,10 @@ type StorageService interface {
 	UploadVideo(ctx context.Context, file *multipart.FileHeader, folder string) (string, error)
 	UploadDocument(ctx context.Context, file *multipart.FileHeader, folder string) (string, error)
 	DeleteFile(ctx context.Context, url string) error
+	DeleteFolder(ctx context.Context, path string) error
 	GetFilePath(url string) string
 	FileExists(url string) bool
 	UploadHLSFiles(ctx context.Context, localDir string, s3Prefix string) error
 	GetFileStream(ctx context.Context, path string) (io.ReadCloser, string, error)
+	GetBucket() string
 }

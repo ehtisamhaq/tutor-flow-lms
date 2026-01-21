@@ -16,8 +16,9 @@ import {
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VideoPlayer } from "@/components/video/video-player";
+import { ProtectedVideoPlayer } from "@/components/video/protected-video-player";
 import { useVideoProgressStore } from "@/store/video-progress-store";
+import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ export function LearningContent({
   currentLesson,
 }: LearningContentProps) {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedModules, setExpandedModules] = useState<
     Record<string, boolean>
@@ -299,15 +301,16 @@ export function LearningContent({
             {/* Video Player */}
             {currentLesson.lesson_type === "video" &&
             currentLesson.video_url ? (
-              <VideoPlayer
+              <ProtectedVideoPlayer
                 src={currentLesson.video_url}
+                lessonId={currentLesson.id}
+                courseId={courseId}
+                userId={user?.id || ""}
+                userEmail={user?.email || ""}
                 title={currentLesson.title}
                 captions={currentLesson.captions}
-                bookmarks={lessonBookmarks}
                 initialTime={lessonProgress?.currentTime || 0}
                 onProgress={handleProgress}
-                onBookmarkAdd={handleBookmarkAdd}
-                onBookmarkRemove={handleBookmarkRemove}
                 onComplete={handleComplete}
               />
             ) : currentLesson.lesson_type === "video" ? (

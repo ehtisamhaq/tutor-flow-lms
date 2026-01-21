@@ -52,10 +52,12 @@ func (uc *videoUseCase) UploadVideo(ctx context.Context, lessonID uuid.UUID, fil
 	// Check if video already exists for lesson
 	existing, _ := uc.videoRepo.GetAssetByLessonID(ctx, lessonID)
 	if existing != nil {
-		return nil, errors.New("video already exists for this lesson")
+		// If it's already completed, we might want to block or require explicit delete.
+		// But for now, let's allow re-uploading by deleting the old one.
+		_ = uc.DeleteVideo(ctx, lessonID)
 	}
 
-	// Create video asset record
+	fmt.Printf("Uploading/Creating video asset for lesson %s with URL: %s\n", lessonID, fileURL)
 	asset := &domain.HLSVideoAsset{
 		LessonID:    lessonID,
 		OriginalURL: fileURL,
@@ -63,8 +65,10 @@ func (uc *videoUseCase) UploadVideo(ctx context.Context, lessonID uuid.UUID, fil
 	}
 
 	if err := uc.videoRepo.CreateAsset(ctx, asset); err != nil {
+		fmt.Printf("Failed to create video asset in DB: %v\n", err)
 		return nil, err
 	}
+	fmt.Printf("Created video asset in DB with ID: %s, OriginalURL: %s\n", asset.ID, asset.OriginalURL)
 
 	// In production, trigger async video processing job here
 	// For now, we'll mark strictly as pending and expect ProcessVideo to be called.
@@ -84,11 +88,15 @@ func (uc *videoUseCase) UploadVideo(ctx context.Context, lessonID uuid.UUID, fil
 
 // UploadVideoFile uploads a video file via multipart form
 func (uc *videoUseCase) UploadVideoFile(ctx context.Context, lessonID uuid.UUID, file *multipart.FileHeader) (*domain.HLSVideoAsset, error) {
+	fmt.Printf("UploadVideoFile: Starting upload for lesson %s, filename: %s, size: %d\n", lessonID, file.Filename, file.Size)
 	// Upload to storage (temp location)
-	url, err := uc.storageService.UploadVideo(ctx, file, "uploads/videos")
+	url, err := uc.storageService.UploadVideo(ctx, file, "videos/originals")
 	if err != nil {
+		fmt.Printf("UploadVideoFile: storageService.UploadVideo failed: %v\n", err)
 		return nil, fmt.Errorf("failed to upload video file: %w", err)
 	}
+
+	fmt.Printf("UploadVideoFile: storageService.UploadVideo returned URL: '%s'\n", url)
 
 	// Delegate to standard UploadVideo logic
 	return uc.UploadVideo(ctx, lessonID, url)
@@ -98,12 +106,17 @@ func (uc *videoUseCase) UploadVideoFile(ctx context.Context, lessonID uuid.UUID,
 func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) error {
 	asset, err := uc.videoRepo.GetAssetByID(ctx, videoID)
 	if err != nil {
+		fmt.Printf("ProcessVideo: Video not found with ID %s\n", videoID)
 		return errors.New("video not found")
 	}
+
+	fmt.Printf("Processing video asset: %+v\n", asset)
+	fmt.Printf("OriginalURL from DB: '%s'\n", asset.OriginalURL)
 
 	// Update status to processing
 	asset.Status = domain.VideoStatusProcessing
 	if err := uc.videoRepo.UpdateAsset(ctx, asset); err != nil {
+		fmt.Printf("Failed to update asset status to processing: %v\n", err)
 		return err
 	}
 
@@ -141,17 +154,92 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 	keyInfoFile := filepath.Join(tempDir, "video.keyinfo")
 	// The first line is the URI that will be written to the playlist.
 	// We want this to be our API endpoint.
-	keyURI := fmt.Sprintf("http://localhost:8080/api/v1/drm/key/%s", videoID) // TODO: Use configured base URL
+	keyURI := fmt.Sprintf("/api/v1/drm/key/%s", videoID) // Relative to domain
 
 	keyInfoContent := fmt.Sprintf("%s\n%s\n%s", keyURI, keyFile, iv)
 	if err := os.WriteFile(keyInfoFile, []byte(keyInfoContent), 0600); err != nil {
 		return uc.handleProcessingError(ctx, asset, err)
 	}
 
-	// 4. Run FFmpeg
-	// Input: asset.OriginalURL (assuming local path for simplicity or http url)
-	// Output: HLS playlist and segments
+	// 4. Download video if it's a URL
+	inputPath := asset.OriginalURL
+	isRemote := strings.HasPrefix(asset.OriginalURL, "http://") || strings.HasPrefix(asset.OriginalURL, "https://")
 
+	// Better isS3 detection: if it's remote and we are using S3 driver, or if it contains minio
+	isS3 := isRemote && (strings.Contains(asset.OriginalURL, "minio:9000") || strings.Contains(asset.OriginalURL, uc.storageService.GetBucket()))
+
+	if isRemote {
+		fmt.Printf("Video is remote (isS3: %v), downloading...\n", isS3)
+		var stream io.ReadCloser
+		var err error
+
+		if isS3 {
+			// Extract S3 path from URL
+			// URL format: http://minio:9000/bucket/videos/originals/filename.mp4
+			// We need to get everything after the bucket name
+			bucketName := uc.storageService.GetBucket()
+			searchStr := "/" + bucketName + "/"
+			idx := strings.Index(asset.OriginalURL, searchStr)
+			if idx == -1 {
+				// Fallback to previous logic if bucket name not found in URL
+				parts := strings.SplitN(asset.OriginalURL, "://", 2)
+				if len(parts) == 2 {
+					hostAndPath := parts[1]
+					pathParts := strings.SplitN(hostAndPath, "/", 2)
+					if len(pathParts) == 2 {
+						s3Path := pathParts[1]
+						if strings.HasPrefix(s3Path, bucketName+"/") {
+							s3Path = strings.TrimPrefix(s3Path, bucketName+"/")
+						}
+						fmt.Printf("Derived S3 path (fallback): %s\n", s3Path)
+						stream, _, err = uc.storageService.GetFileStream(ctx, s3Path)
+					}
+				}
+			} else {
+				s3Path := asset.OriginalURL[idx+len(searchStr):]
+				fmt.Printf("Derived S3 path: %s\n", s3Path)
+				stream, _, err = uc.storageService.GetFileStream(ctx, s3Path)
+			}
+		} else {
+			// Generic HTTP download (TODO: use http.Get if needed, but for now assuming it's mostly S3 in this app)
+			return uc.handleProcessingError(ctx, asset, fmt.Errorf("generic HTTP download not implemented yet for URL: %s", asset.OriginalURL))
+		}
+
+		if err != nil {
+			return uc.handleProcessingError(ctx, asset, fmt.Errorf("failed to get file stream: %w", err))
+		}
+		if stream == nil {
+			return uc.handleProcessingError(ctx, asset, errors.New("file stream is nil"))
+		}
+		defer stream.Close()
+
+		// Save to temp file
+		tempInputFile := filepath.Join(tempDir, "input.mp4")
+		outFile, err := os.Create(tempInputFile)
+		if err != nil {
+			return uc.handleProcessingError(ctx, asset, err)
+		}
+		defer outFile.Close()
+
+		size, err := io.Copy(outFile, stream)
+		if err != nil {
+			return uc.handleProcessingError(ctx, asset, fmt.Errorf("failed to save temp file: %w", err))
+		}
+
+		inputPath = tempInputFile
+		fmt.Printf("Downloaded video to: %s (size: %d bytes)\n", inputPath, size)
+	} else {
+		// Verify local file exists
+		if _, err := os.Stat(asset.OriginalURL); os.IsNotExist(err) {
+			if !filepath.IsAbs(asset.OriginalURL) {
+				cwd, _ := os.Getwd()
+				inputPath = filepath.Join(cwd, asset.OriginalURL)
+			}
+		}
+		fmt.Printf("Using local video path: %s\n", inputPath)
+	}
+
+	// 5. Run FFmpeg
 	// Ensure output dir exists
 	outputDir := filepath.Join(tempDir, "output")
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -161,23 +249,8 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 	playlistPath := filepath.Join(outputDir, "index.m3u8")
 	segmentPath := filepath.Join(outputDir, "segment_%03d.ts")
 
-	// Verify input file exists (if local)
-	isRemote := strings.HasPrefix(asset.OriginalURL, "http://") || strings.HasPrefix(asset.OriginalURL, "https://")
-	if !isRemote {
-		if _, err := os.Stat(asset.OriginalURL); os.IsNotExist(err) {
-			// If it's a URL, ffmpeg can handle it, but if it expects a local file...
-			// For now assume local file path from upload.
-			// If it's "uploads/..." we might need absolute path.
-			// Let's assume absolute path is needed if it's relative.
-			if !filepath.IsAbs(asset.OriginalURL) {
-				cwd, _ := os.Getwd()
-				asset.OriginalURL = filepath.Join(cwd, asset.OriginalURL)
-			}
-		}
-	}
-
 	cmd := exec.CommandContext(ctx, "ffmpeg",
-		"-i", asset.OriginalURL,
+		"-i", inputPath,
 		"-c:v", "libx264", "-b:v", "1000k", // Simplify for now: single quality
 		"-c:a", "aac", "-b:a", "128k",
 		"-hls_time", "10",
@@ -188,8 +261,10 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 	)
 
 	// Capture output for debugging
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	fmt.Printf("Running FFmpeg command: %v\n", cmd.Args)
 
 	if err := cmd.Run(); err != nil {
 		return uc.handleProcessingError(ctx, asset, fmt.Errorf("ffmpeg failed: %w", err))
@@ -233,7 +308,7 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 	// 7. Upload to S3 if configured
 	// We check if driver is s3 using config (or just call UploadHLSFiles which handles it)
 	// But we need a prefix for S3. Let's use "hls/{videoID}"
-	s3Prefix := fmt.Sprintf("hls/%s", videoID)
+	s3Prefix := fmt.Sprintf("videos/hls/%s", videoID)
 	if err := uc.storageService.UploadHLSFiles(ctx, outputDir, s3Prefix); err != nil {
 		return uc.handleProcessingError(ctx, asset, fmt.Errorf("failed to upload HLS files: %w", err))
 	}
@@ -543,4 +618,25 @@ func (uc *videoUseCase) generateToken(videoID, userID uuid.UUID, deviceID string
 	h := hmac.New(sha256.New, []byte(uc.signingSecret))
 	h.Write([]byte(data))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// DeleteVideo removes all assets associated with a lesson's video
+func (uc *videoUseCase) DeleteVideo(ctx context.Context, lessonID uuid.UUID) error {
+	asset, err := uc.videoRepo.GetAssetByLessonID(ctx, lessonID)
+	if err != nil {
+		return err
+	}
+
+	// Delete from S3
+	if asset.OriginalURL != "" {
+		_ = uc.storageService.DeleteFile(ctx, asset.OriginalURL)
+	}
+
+	// Delete HLS folder
+	hlsPrefix := fmt.Sprintf("videos/hls/%s", asset.ID.String())
+	_ = uc.storageService.DeleteFolder(ctx, hlsPrefix)
+
+	// Delete from DB (repository handles cascading if configured, but let's be explicit if needed)
+	// Actually GORM Delete handles the record.
+	return uc.videoRepo.DeleteAsset(ctx, asset.ID)
 }

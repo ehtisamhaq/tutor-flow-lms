@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/tutorflow/tutorflow-server/internal/domain"
+	"github.com/tutorflow/tutorflow-server/internal/middleware"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -274,12 +275,12 @@ func (h *SubscriptionHandler) HandleStripeWebhook(c echo.Context) error {
 
 // Helper to get user ID from context
 func getUserIDFromContext(c echo.Context) uuid.UUID {
-	user := c.Get("user")
-	if user == nil {
+	id := c.Get(middleware.UserIDKey)
+	if id == nil {
 		return uuid.Nil
 	}
-	if u, ok := user.(*domain.User); ok {
-		return u.ID
+	if uID, ok := id.(uuid.UUID); ok {
+		return uID
 	}
 	return uuid.Nil
 }

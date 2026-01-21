@@ -25,6 +25,11 @@ type Service struct {
 	minioClient *minio.Client
 }
 
+// GetBucket returns the configured S3 bucket name
+func (s *Service) GetBucket() string {
+	return s.cfg.S3Bucket
+}
+
 // NewService creates a new storage service
 func NewService(cfg config.StorageConfig) *Service {
 	svc := &Service{
@@ -42,10 +47,15 @@ func NewService(cfg config.StorageConfig) *Service {
 			Region: cfg.S3Region,
 		})
 		if err != nil {
-			// Panic or log fatal in production, but here we'll just log
-			fmt.Printf("Failed to initialize MinIO client: %v\n", err)
-		} else {
-			svc.minioClient = minioClient
+			// Fatal error - cannot proceed with S3 storage
+			panic(fmt.Sprintf("Failed to initialize MinIO client: %v", err))
+		}
+		svc.minioClient = minioClient
+
+		// Ensure bucket exists
+		exists, err := minioClient.BucketExists(context.Background(), cfg.S3Bucket)
+		if err == nil && !exists {
+			_ = minioClient.MakeBucket(context.Background(), cfg.S3Bucket, minio.MakeBucketOptions{})
 		}
 	}
 
@@ -64,25 +74,34 @@ func (s *Service) UploadFile(ctx context.Context, file *multipart.FileHeader, fo
 	ext := filepath.Ext(file.Filename)
 	filename := fmt.Sprintf("%s-%d%s", uuid.New().String(), time.Now().UnixNano(), ext)
 	path := fmt.Sprintf("%s/%s", folder, filename)
+	fmt.Printf("StorageService: UploadFile starting. Folder: %s, Path: %s, Driver: %s\n", folder, path, s.cfg.Driver)
 
 	if s.cfg.Driver == "s3" && s.minioClient != nil {
+		fmt.Printf("StorageService: Uploading to S3 bucket %s...\n", s.cfg.S3Bucket)
 		// Upload to S3
 		info, err := s.minioClient.PutObject(ctx, s.cfg.S3Bucket, path, src, file.Size, minio.PutObjectOptions{
 			ContentType: file.Header.Get("Content-Type"),
 		})
 		if err != nil {
+			fmt.Printf("StorageService: S3 PutObject failed: %v\n", err)
 			return "", err
 		}
+		fmt.Printf("StorageService: S3 PutObject successful. Info: %+v\n", info)
+
 		// Return URL (CDN or S3)
 		if s.cdnBase != "" {
-			return fmt.Sprintf("%s/%s", s.cdnBase, path), nil
+			url := fmt.Sprintf("%s/%s", s.cdnBase, path)
+			fmt.Printf("StorageService: Returning CDN URL: %s\n", url)
+			return url, nil
 		}
 
 		protocol := "https"
 		if !s.cfg.UseSSL {
 			protocol = "http"
 		}
-		return fmt.Sprintf("%s://%s/%s/%s", protocol, s.cfg.S3Endpoint, s.cfg.S3Bucket, info.Key), nil
+		url := fmt.Sprintf("%s://%s/%s/%s", protocol, s.cfg.S3Endpoint, s.cfg.S3Bucket, info.Key)
+		fmt.Printf("StorageService: Returning S3 URL: %s\n", url)
+		return url, nil
 	}
 
 	// Local Storage Fallback
@@ -196,6 +215,42 @@ func (s *Service) DeleteFile(ctx context.Context, url string) error {
 
 	fullPath := filepath.Join(s.basePath, path)
 	return os.Remove(fullPath)
+}
+
+// DeleteFolder deletes a folder and all its contents
+func (s *Service) DeleteFolder(ctx context.Context, path string) error {
+	if path == "" {
+		return nil
+	}
+
+	if s.cfg.Driver == "s3" && s.minioClient != nil {
+		objectsCh := make(chan minio.ObjectInfo)
+
+		// Send object names that are needed to be removed to objectsCh
+		go func() {
+			defer close(objectsCh)
+			for object := range s.minioClient.ListObjects(ctx, s.cfg.S3Bucket, minio.ListObjectsOptions{Prefix: path, Recursive: true}) {
+				if object.Err != nil {
+					return
+				}
+				objectsCh <- object
+			}
+		}()
+
+		errorCh := s.minioClient.RemoveObjects(ctx, s.cfg.S3Bucket, objectsCh, minio.RemoveObjectsOptions{
+			GovernanceBypass: true,
+		})
+
+		for err := range errorCh {
+			if err.Err != nil {
+				return err.Err
+			}
+		}
+		return nil
+	}
+
+	fullPath := filepath.Join(s.basePath, path)
+	return os.RemoveAll(fullPath)
 }
 
 // GetFilePath returns the local file path from URL (only works for local driver)

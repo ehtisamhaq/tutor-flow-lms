@@ -31,7 +31,7 @@ storage:
   # s3_bucket: "tutorflow-uploads"
   # s3_region: "us-east-1"
   # s3_endpoint: ""  # For S3-compatible services
-  cdn_base_url: "http://localhost:8080/uploads"
+  cdn_base_url: ""
 
 email:
   smtp_host: "smtp.mailtrap.io"

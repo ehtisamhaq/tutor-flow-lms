@@ -43,6 +43,7 @@ import {
   publishCourseAction,
 } from "@/app/(dashboard)/tutor/courses/lib/actions";
 import { QuizEditor } from "./quiz-editor";
+import { VideoUploader } from "./video-uploader";
 import React from "react";
 // import { courseApi } from "@/lib/course-api"; // Migrated to Server Actions
 
@@ -651,24 +652,46 @@ export function CourseForm({
                                 {/* Content Fields */}
                                 <div className="pl-8">
                                   {lesson.type === "video" && (
-                                    <Input
-                                      placeholder="Video URL (e.g., YouTube, Vimeo)"
-                                      value={lesson.video_url || ""}
-                                      onChange={(e) =>
-                                        updateLessonValue(
-                                          module.id,
-                                          lesson.id,
-                                          "video_url",
-                                          e.target.value,
-                                        )
-                                      }
-                                      onBlur={() =>
-                                        saveLesson(module.id, lesson.id, {
-                                          video_url: lesson.video_url,
-                                        })
-                                      }
-                                      className="h-8 text-xs bg-background"
-                                    />
+                                    <div className="space-y-2">
+                                      <VideoUploader
+                                        lessonId={lesson.id}
+                                        initialVideoUrl={lesson.video_url}
+                                        onUploadComplete={(url) =>
+                                          updateLessonValue(
+                                            module.id,
+                                            lesson.id,
+                                            "video_url",
+                                            url,
+                                          )
+                                        }
+                                        onDelete={() =>
+                                          updateLessonValue(
+                                            module.id,
+                                            lesson.id,
+                                            "video_url",
+                                            "",
+                                          )
+                                        }
+                                      />
+                                      <Input
+                                        placeholder="Or external Video URL (YouTube, Vimeo)"
+                                        value={lesson.video_url || ""}
+                                        onChange={(e) =>
+                                          updateLessonValue(
+                                            module.id,
+                                            lesson.id,
+                                            "video_url",
+                                            e.target.value,
+                                          )
+                                        }
+                                        onBlur={() =>
+                                          saveLesson(module.id, lesson.id, {
+                                            video_url: lesson.video_url,
+                                          })
+                                        }
+                                        className="h-8 text-xs bg-background"
+                                      />
+                                    </div>
                                   )}
                                   {lesson.type === "text" && (
                                     <textarea

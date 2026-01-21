@@ -156,6 +156,10 @@ func setDefaults() {
 	viper.SetDefault("storage.local_path", "./uploads")
 	viper.SetDefault("storage.s3_region", "us-east-1")
 	viper.SetDefault("storage.use_ssl", true)
+	viper.SetDefault("storage.s3_bucket", "")
+	viper.SetDefault("storage.s3_endpoint", "")
+	viper.SetDefault("storage.access_key", "")
+	viper.SetDefault("storage.secret_key", "")
 
 	// Redis
 	viper.SetDefault("redis.host", "localhost")

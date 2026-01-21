@@ -26,8 +26,12 @@ func NewVideoHandler(uc domain.VideoUseCase) *VideoHandler {
 func (h *VideoHandler) RegisterRoutes(e *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	// Authenticated routes
 	videos := e.Group("/videos", authMiddleware)
+	// Upload & Processing
 	videos.POST("/lessons/:lessonId/upload", h.UploadVideo)
 	videos.GET("/lessons/:lessonId/status", h.GetProcessingStatus)
+	videos.DELETE("/lessons/:lessonId", h.DeleteVideo)
+
+	// Playback
 	videos.GET("/lessons/:lessonId/playback", h.GetPlaybackURL)
 
 	// DRM routes
@@ -75,11 +79,13 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 	}
 
 	// Check for multipart file first
-	file, err := c.FormFile("file")
+	file, err := c.FormFile("video")
 	if err == nil {
+		fmt.Printf("UploadVideo: Found multipart file 'video', size: %d\n", file.Size)
 		// Multipart upload
 		asset, err := h.videoUC.UploadVideoFile(c.Request().Context(), lessonID, file)
 		if err != nil {
+			fmt.Printf("UploadVideo: UploadVideoFile failed: %v\n", err)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 				"success": false,
 				"error":   map[string]string{"message": err.Error()},
@@ -91,17 +97,22 @@ func (h *VideoHandler) UploadVideo(c echo.Context) error {
 		})
 	}
 
+	fmt.Printf("UploadVideo: FormFile('video') failed: %v, falling back to JSON\n", err)
+
 	// Fallback to JSON body (URL)
 	var req UploadVideoRequest
 	if err := c.Bind(&req); err != nil {
+		fmt.Printf("UploadVideo: JSON bind failed: %v\n", err)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": "Invalid request body or missing file"},
 		})
 	}
 
+	fmt.Printf("UploadVideo: Falling back to URL: '%s'\n", req.FileURL)
 	asset, err := h.videoUC.UploadVideo(c.Request().Context(), lessonID, req.FileURL)
 	if err != nil {
+		fmt.Printf("UploadVideo: UploadVideo failed: %v\n", err)
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
 			"error":   map[string]string{"message": err.Error()},
@@ -136,6 +147,29 @@ func (h *VideoHandler) GetProcessingStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"success": true,
 		"data":    status,
+	})
+}
+
+// DeleteVideo removes a video associated with a lesson
+func (h *VideoHandler) DeleteVideo(c echo.Context) error {
+	id, err := uuid.Parse(c.Param("lessonId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   map[string]string{"message": "Invalid lesson ID"},
+		})
+	}
+
+	if err := h.videoUC.DeleteVideo(c.Request().Context(), id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"success": false,
+			"error":   map[string]string{"message": "Failed to delete video"},
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Video deleted successfully",
 	})
 }
 

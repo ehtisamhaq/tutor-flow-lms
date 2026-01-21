@@ -34,7 +34,7 @@ const (
 type HLSVideoAsset struct {
 	ID              uuid.UUID             `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	LessonID        uuid.UUID             `gorm:"type:uuid;index;not null" json:"lesson_id"`
-	OriginalURL     string                `gorm:"size:500;not null" json:"-"`
+	OriginalURL     string                `gorm:"size:500;not null" json:"original_url,omitempty"`
 	Duration        int                   `gorm:"" json:"duration"` // seconds
 	FileSize        int64                 `gorm:"" json:"file_size"`
 	Resolution      string                `gorm:"size:20" json:"resolution"` // e.g., "1920x1080"
@@ -138,7 +138,8 @@ type VideoUseCase interface {
 	UploadVideo(ctx context.Context, lessonID uuid.UUID, fileURL string) (*HLSVideoAsset, error)
 	UploadVideoFile(ctx context.Context, lessonID uuid.UUID, file *multipart.FileHeader) (*HLSVideoAsset, error)
 	ProcessVideo(ctx context.Context, videoID uuid.UUID) error
-	GetProcessingStatus(ctx context.Context, videoID uuid.UUID) (*HLSVideoAsset, error)
+	GetProcessingStatus(ctx context.Context, lessonID uuid.UUID) (*HLSVideoAsset, error)
+	DeleteVideo(ctx context.Context, lessonID uuid.UUID) error
 
 	// Playback
 	GetPlaybackURL(ctx context.Context, lessonID, userID uuid.UUID, deviceID string) (string, error)
