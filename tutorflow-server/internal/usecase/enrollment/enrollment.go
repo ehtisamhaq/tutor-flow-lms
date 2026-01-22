@@ -2,6 +2,7 @@ package enrollment
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ type UseCase struct {
 	enrollmentRepo   repository.EnrollmentRepository
 	progressRepo     repository.LessonProgressRepository
 	courseRepo       repository.CourseRepository
+	lessonRepo       repository.LessonRepository
 	notificationRepo repository.NotificationRepository
 }
 
@@ -23,12 +25,14 @@ func NewUseCase(
 	enrollmentRepo repository.EnrollmentRepository,
 	progressRepo repository.LessonProgressRepository,
 	courseRepo repository.CourseRepository,
+	lessonRepo repository.LessonRepository,
 	notificationRepo repository.NotificationRepository,
 ) *UseCase {
 	return &UseCase{
 		enrollmentRepo:   enrollmentRepo,
 		progressRepo:     progressRepo,
 		courseRepo:       courseRepo,
+		lessonRepo:       lessonRepo,
 		notificationRepo: notificationRepo,
 	}
 }
@@ -214,6 +218,20 @@ func (uc *UseCase) Complete(ctx context.Context, id uuid.UUID) error {
 // MarkLessonCompleteInput for marking lesson as complete
 type MarkLessonCompleteInput struct {
 	LessonID uuid.UUID `json:"lesson_id" validate:"required"`
+}
+
+// MarkLessonCompleteByOriginalID marks a lesson as complete for a user by just the lesson ID
+func (uc *UseCase) MarkLessonCompleteByOriginalID(ctx context.Context, userID, lessonID uuid.UUID) error {
+	lesson, err := uc.lessonRepo.GetByID(ctx, lessonID)
+	if err != nil {
+		return err
+	}
+
+	if lesson.Module == nil {
+		return fmt.Errorf("lesson module info missing")
+	}
+
+	return uc.MarkLessonComplete(ctx, userID, lesson.Module.CourseID, lessonID)
 }
 
 // MarkLessonComplete marks a lesson as complete and updates progress

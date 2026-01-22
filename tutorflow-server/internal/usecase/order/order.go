@@ -62,27 +62,9 @@ func (uc *UseCase) GetMyOrders(ctx context.Context, userID uuid.UUID, page, limi
 	return uc.orderRepo.GetByUser(ctx, userID, page, limit)
 }
 
-// GetByCheckoutSession returns order by Stripe checkout session ID
+// GetByCheckoutSession returns order by Stripe checkout session ID and triggers fulfillment if paid
 func (uc *UseCase) GetByCheckoutSession(ctx context.Context, sessionID string) (*domain.Order, error) {
-	// 1. Get session from Stripe
-	session, err := uc.paymentSvc.GetCheckoutSession(ctx, sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get checkout session: %w", err)
-	}
-
-	// 2. Get order ID from metadata
-	orderIDStr, ok := session.Metadata["order_id"]
-	if !ok {
-		return nil, fmt.Errorf("order_id not found in session metadata")
-	}
-
-	orderID, err := uuid.Parse(orderIDStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid order_id in metadata: %w", err)
-	}
-
-	// 3. Get order from repo
-	return uc.orderRepo.GetByID(ctx, orderID)
+	return uc.ConfirmCheckout(ctx, sessionID)
 }
 
 // CreateOrder creates an order from cart
@@ -315,8 +297,11 @@ func (uc *UseCase) ConfirmPayment(ctx context.Context, paymentIntentID string) (
 	}
 
 	if pi.Status != "succeeded" {
+		fmt.Printf("[ORDER DEBUG] Payment intent %s status: %s\n", paymentIntentID, pi.Status)
 		return nil, fmt.Errorf("payment not completed: %s", pi.Status)
 	}
+
+	fmt.Printf("[ORDER DEBUG] Payment intent %s SUCCEEDED. Fulfilling order %s...\n", paymentIntentID, order.ID)
 
 	// Complete the order
 	output, err := uc.completeOrder(ctx, order)
@@ -336,8 +321,11 @@ func (uc *UseCase) ConfirmCheckout(ctx context.Context, sessionID string) (*doma
 	}
 
 	if session.PaymentStatus != "paid" {
+		fmt.Printf("[ORDER DEBUG] Session %s not paid yet: %s\n", sessionID, session.PaymentStatus)
 		return nil, fmt.Errorf("session not paid: %s", session.PaymentStatus)
 	}
+
+	fmt.Printf("[ORDER DEBUG] Session %s PAID. Fulfilling...\n", sessionID)
 
 	// Get order ID from metadata
 	orderIDStr, ok := session.Metadata["order_id"]
@@ -377,17 +365,18 @@ func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*dom
 	order.PaidAt = &now
 
 	if err := uc.orderRepo.Update(ctx, order); err != nil {
+		fmt.Printf("[ORDER DEBUG] Failed to update order %s to completed: %v\n", order.ID, err)
 		return nil, err
 	}
+
+	fmt.Printf("[ORDER DEBUG] Order %s marked COMPLETED\n", order.ID)
 
 	// Create enrollments for each course
 	for _, item := range order.Items {
 		// Check if student is already enrolled in this course (idempotency)
 		existing, _ := uc.enrollmentRepo.GetByUserAndCourse(ctx, order.UserID, item.CourseID)
 		if existing != nil {
-			// If already enrolled (maybe from a previous webhook retry), skip creating a new one
-			// but we might want to update it if it's pending/cancelled etc.
-			// For now, we assume if it exists, it's fine.
+			fmt.Printf("[ORDER DEBUG] User %s already enrolled in course %s, skipping\n", order.UserID, item.CourseID)
 			continue
 		}
 
@@ -398,7 +387,11 @@ func (uc *UseCase) completeOrder(ctx context.Context, order *domain.Order) (*dom
 			StartedAt: &now,
 			OrderID:   &order.ID,
 		}
-		_ = uc.enrollmentRepo.Create(ctx, enrollment)
+		if err := uc.enrollmentRepo.Create(ctx, enrollment); err != nil {
+			fmt.Printf("[ORDER DEBUG] Failed to create enrollment for course %s: %v\n", item.CourseID, err)
+		} else {
+			fmt.Printf("[ORDER DEBUG] Created enrollment for course %s\n", item.CourseID)
+		}
 
 		// Update course student count
 		_ = uc.courseRepo.IncrementStudentCount(ctx, item.CourseID)

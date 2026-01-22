@@ -181,7 +181,7 @@ func (r *lessonRepository) Create(ctx context.Context, lesson *domain.Lesson) er
 
 func (r *lessonRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Lesson, error) {
 	var lesson domain.Lesson
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&lesson).Error
+	err := r.db.WithContext(ctx).Preload("Module").Where("id = ?", id).First(&lesson).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrLessonNotFound

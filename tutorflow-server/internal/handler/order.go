@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -218,8 +219,11 @@ func (h *OrderHandler) HandleWebhook(c echo.Context) error {
 	sigHeader := c.Request().Header.Get("Stripe-Signature")
 	event, err := webhook.ConstructEvent(payload, sigHeader, h.paymentSvc.GetWebhookSecret())
 	if err != nil {
+		fmt.Printf("[WEBHOOK DEBUG] Signature verification failed: %v\n", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid signature"})
 	}
+
+	fmt.Printf("[WEBHOOK DEBUG] Event received: %s\n", event.Type)
 
 	// Handle event types
 	switch event.Type {

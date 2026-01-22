@@ -407,6 +407,11 @@ func (uc *videoUseCase) GetPlaybackURL(ctx context.Context, lessonID, userID uui
 
 	// Check enrollment (unless it's a preview)
 	if !lesson.IsPreview {
+		if lesson.Module == nil {
+			fmt.Printf("[VIDEO DEBUG] Lesson %s has no Module loaded\n", lessonID)
+			return "", errors.New("lesson module information missing")
+		}
+
 		enrollment, err := uc.enrollmentRepo.GetByUserAndCourse(ctx, userID, lesson.Module.CourseID)
 		if err != nil {
 			return "", errors.New("user is not enrolled in this course")

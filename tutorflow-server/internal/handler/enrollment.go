@@ -32,6 +32,7 @@ func (h *EnrollmentHandler) RegisterRoutes(g *echo.Group, authMW, managerMW echo
 	g.PATCH("/:id/cancel", h.Cancel, authMW)
 	g.GET("/:id/progress", h.GetProgress, authMW)
 	g.POST("/:id/lessons/:lessonId/complete", h.MarkLessonComplete, authMW)
+	g.POST("/progress/complete", h.MarkLessonCompleteByLessonID, authMW)
 	g.PUT("/:id/lessons/:lessonId/position", h.UpdateVideoPosition, authMW)
 }
 
@@ -258,7 +259,25 @@ func (h *EnrollmentHandler) MarkLessonComplete(c echo.Context) error {
 		}
 	}
 
-	return response.SuccessWithMessage(c, "Lesson marked as complete", nil)
+	return response.Success(c, nil)
+}
+
+// MarkLessonCompleteByLessonID handles marking lesson complete with just lesson_id in body
+func (h *EnrollmentHandler) MarkLessonCompleteByLessonID(c echo.Context) error {
+	var input struct {
+		LessonID uuid.UUID `json:"lesson_id"`
+	}
+	if err := c.Bind(&input); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	claims, _ := middleware.GetClaims(c)
+
+	if err := h.enrollmentUC.MarkLessonCompleteByOriginalID(c.Request().Context(), claims.UserID, input.LessonID); err != nil {
+		return response.InternalError(c, err.Error())
+	}
+
+	return response.Success(c, nil)
 }
 
 // UpdateVideoPosition godoc
