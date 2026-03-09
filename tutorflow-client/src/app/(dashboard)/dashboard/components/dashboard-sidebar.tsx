@@ -44,49 +44,58 @@ import {
 } from "lucide-react";
 import { NavUser } from "../../components/nav-user";
 
-// Grouped navigation items by category
+// Navigation items for different roles
 const navGroups = [
-  //   {
-  //     label: "Dashboard",
-  //     items: [
-  //       {
-  //         title: "Overview",
-  //         url: "/dashboard",
-  //         icon: IconLayoutDashboard,
-  //         roles: [Role.ADMIN, Role.MANAGER, Role.TUTOR], // instructor => overview
-  //       },
-  //       {
-  //         title: "My Workspace",
-  //         url: "/dashboard/my-workspace",
-  //         icon: IconClipboardCheck,
-  //         roles: [Role.ADMIN, Role.MANAGER, Role.TUTOR], // instructor => my tasks
-  //       },
-  //     ],
-  //   },
-
+  {
+    label: "Admin",
+    roles: ["admin", "manager"],
+    items: [
+      { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+      { title: "Users", url: "/admin/users", icon: IconUsers },
+      { title: "Courses", url: "/admin/courses", icon: BookOpen },
+      { title: "Bundles", url: "/admin/bundles", icon: IconPackage },
+      {
+        title: "Subscriptions",
+        url: "/admin/subscription-plans",
+        icon: CreditCard,
+      },
+      { title: "Refunds", url: "/admin/refunds", icon: IconScale },
+      { title: "Revenue", url: "/admin/revenue", icon: CreditCard },
+      { title: "Analytics", url: "/admin/analytics", icon: IconActivity },
+      { title: "Settings", url: "/admin/settings", icon: Settings },
+    ],
+  },
+  {
+    label: "Instructor",
+    roles: ["tutor"],
+    items: [
+      { title: "Dashboard", url: "/tutor", icon: LayoutDashboard },
+      { title: "My Courses", url: "/tutor/courses", icon: BookOpen },
+      { title: "Earnings", url: "/tutor/earnings", icon: CreditCard },
+      { title: "Reviews", url: "/tutor/reviews", icon: IconClipboardCheck },
+      { title: "Messages", url: "/tutor/messages", icon: MessageSquare },
+      { title: "Settings", url: "/tutor/settings", icon: Settings },
+    ],
+  },
   {
     label: "Student",
+    roles: ["student"],
     items: [
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { title: "My Courses", url: "/dashboard/my-courses", icon: BookOpen },
       {
-        url: "/dashboard",
-        title: "Dashboard",
-        icon: LayoutDashboard,
-        roles: [Role.ADMIN, Role.MANAGER, Role.TUTOR],
-      },
-      { url: "/dashboard/my-courses", title: "My Courses", icon: BookOpen },
-      {
-        url: "/dashboard/peer-reviews",
         title: "Peer Reviews",
+        url: "/dashboard/peer-reviews",
         icon: ClipboardCheck,
       },
       {
-        url: "/dashboard/subscription",
         title: "Subscription",
+        url: "/dashboard/subscription",
         icon: CreditCard,
       },
-      { url: "/dashboard/messages", title: "Messages", icon: MessageSquare },
-      { url: "/dashboard/notifications", title: "Notifications", icon: Bell },
-      { url: "/dashboard/settings", title: "Settings", icon: Settings },
+      { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
+      { title: "Notifications", url: "/dashboard/notifications", icon: Bell },
+      { title: "Settings", url: "/dashboard/settings", icon: Settings },
     ],
   },
 ];
@@ -116,14 +125,13 @@ export function DashboardSidebar({ user, ...props }: AppSidebarProps) {
 
       <SidebarContent>
         {navGroups.map((group) => {
-          // Filter items based on user role
-          const filteredItems = group.items.filter(
-            (item) => user,
-            // (item) => user && item.roles.includes(user.role),
-          );
+          // Filter groups based on user role
+          const isAllowed = user && group.roles.includes(user.role);
 
-          // Don't render empty groups
-          if (filteredItems.length === 0) return null;
+          // Don't render groups the user doesn't have access to
+          if (!isAllowed) return null;
+
+          const filteredItems = group.items;
 
           return (
             <SidebarGroup key={group.label}>

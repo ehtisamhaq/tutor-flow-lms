@@ -1,77 +1,69 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import {
-  GraduationCap,
-  LayoutDashboard,
-  BookOpen,
-  DollarSign,
-  MessageSquare,
-  Star,
-  Settings,
-} from "lucide-react";
-import { DashboardSidebar } from "@/components/dashboard/sidebar";
-import { DashboardHeader } from "@/components/dashboard/header";
-
-async function checkTutorAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken");
-  if (!token) {
-    redirect("/login");
-  }
-  return token.value;
-}
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { DynamicBreadcrumb } from "../components/dynamic-breadcrumb";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DashboardSidebar } from "../dashboard/components/dashboard-sidebar";
 
 export default async function TutorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await checkTutorAuth();
+  const session = await getSession();
 
-  const navItems = [
-    { href: "/tutor", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/tutor/courses", label: "My Courses", icon: BookOpen },
-    { href: "/tutor/earnings", label: "Earnings", icon: DollarSign },
-    { href: "/tutor/reviews", label: "Reviews", icon: Star },
-    { href: "/tutor/messages", label: "Messages", icon: MessageSquare },
-    { href: "/tutor/settings", label: "Settings", icon: Settings },
-  ];
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Only allow tutor roles
+  if (session.role !== "tutor") {
+    redirect("/dashboard?error=unauthorized");
+  }
+
+  const user = {
+    name: `${session.first_name} ${session.last_name}`,
+    email: session.email,
+    role: session.role,
+    avatar: session.avatar_url || "",
+  };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col border-r bg-card">
-        <div className="p-6 border-b">
-          <Link href="/tutor" className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Instructor</span>
-          </Link>
-        </div>
+    <SidebarProvider>
+      <DashboardSidebar user={user} />
+      <SidebarInset className="flex h-screen flex-col overflow-hidden">
+        <header className="flex h-12 sm:h-10 shrink-0 items-center justify-between gap-2 border-b px-2 sm:px-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <SidebarTrigger className="-ml-1 shrink-0" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 hidden sm:block"
+            />
+            <div className="min-w-0 flex-1">
+              <DynamicBreadcrumb />
+            </div>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">-</div>
+        </header>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t">
-          <DashboardSidebar />
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        <DashboardHeader />
-        <main className="flex-1 p-6 bg-muted/30">{children}</main>
-      </div>
-    </div>
+        <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+          <ScrollArea className="h-full w-full">
+            <div className="w-full overflow-x-hidden">
+              {/* <FadeIn key="dashboard-content"> */}
+              <div className="flex-1 space-y-4 p-2 md:p-4 lg:p-8">
+                {children}
+              </div>
+              {/* </FadeIn> */}
+            </div>
+          </ScrollArea>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
