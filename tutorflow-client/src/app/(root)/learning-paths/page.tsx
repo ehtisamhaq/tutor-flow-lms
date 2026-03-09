@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { serverApi, type Course } from "@/lib/server-api";
+import { serverApi, type Course, type LearningPath } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -11,37 +11,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-interface LearningPath {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  thumbnail_url?: string;
-  level: "beginner" | "intermediate" | "advanced";
-  duration_hours: number;
-  course_count: number;
-  courses: Course[];
-}
-
-async function getLearningPaths(): Promise<LearningPath[]> {
-  const API_URL = process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
-
-  try {
-    const response = await fetch(`${API_URL}/learning-paths`, {
-      next: { revalidate: 60 },
-    });
-
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.data?.items || [];
-  } catch {
-    return [];
-  }
-}
-
 // Server Component
 export default async function LearningPathsPage() {
-  const paths = await getLearningPaths();
+  const paths = await serverApi.learningPaths.list();
 
   return (
     <div className="min-h-screen">
@@ -63,7 +35,7 @@ export default async function LearningPathsPage() {
               <p className="text-muted-foreground mb-6">
                 Check back soon for curated learning paths
               </p>
-              <Button asChild>
+              <Button>
                 <Link href="/courses">Browse Courses</Link>
               </Button>
             </CardContent>
@@ -114,7 +86,7 @@ export default async function LearningPathsPage() {
                           </span>
                         </div>
                       </div>
-                      <Button asChild>
+                      <Button>
                         <Link href={`/learning-paths/${path.slug}`}>
                           View Path
                           <ChevronRight className="ml-2 h-4 w-4" />

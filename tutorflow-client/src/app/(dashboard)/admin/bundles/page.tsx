@@ -6,7 +6,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import { Plus, Edit, Trash2, Package, BookOpen, Percent } from "lucide-react";
 import Link from "next/link";
 
@@ -49,7 +49,7 @@ export default async function AdminBundlesPage() {
             Create and manage course bundles
           </p>
         </div>
-        <Button asChild>
+        <Button>
           <Link href="/admin/bundles/new">
             <Plus className="h-4 w-4 mr-2" />
             Create Bundle
@@ -91,7 +91,7 @@ export default async function AdminBundlesPage() {
             <div className="text-2xl font-bold">
               {bundles?.items?.reduce(
                 (sum, b) => sum + (b.purchase_count || 0),
-                0
+                0,
               ) || 0}
             </div>
           </CardContent>
@@ -182,7 +182,7 @@ export default async function AdminBundlesPage() {
               </div>
 
               <div className="flex gap-2 pt-2 border-t">
-                <Button variant="outline" size="sm" asChild className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1">
                   <Link href={`/admin/bundles/${bundle.id}/edit`}>
                     <Edit className="h-4 w-4 mr-1" />
                     Edit
@@ -199,7 +199,7 @@ export default async function AdminBundlesPage() {
             <CardContent className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <p className="text-muted-foreground">No bundles created yet</p>
-              <Button className="mt-4" asChild>
+              <Button className="mt-4">
                 <Link href="/admin/bundles/new">Create your first bundle</Link>
               </Button>
             </CardContent>

@@ -11,7 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { CourseForm } from "@/components/tutor/course-form";
-import { authServerFetch, type Course } from "@/lib/server-api";
+import { authServerFetch, type Course } from "@/lib/api";
 
 interface AdminCourse extends Course {
   status: "draft" | "published" | "archived";
@@ -39,7 +39,7 @@ export default async function AdminEditCoursePage({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon">
           <Link href="/admin/courses">
             <ArrowLeft className="h-5 w-5" />
           </Link>

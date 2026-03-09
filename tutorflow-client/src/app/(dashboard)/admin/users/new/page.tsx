@@ -14,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 export default function NewUserPage() {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function NewUserPage() {
       router.refresh();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error?.message || "Failed to create user"
+        error.response?.data?.error?.message || "Failed to create user",
       );
     } finally {
       setLoading(false);
@@ -49,7 +49,7 @@ export default function NewUserPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="ghost" size="sm">
           <Link href="/admin/users">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back

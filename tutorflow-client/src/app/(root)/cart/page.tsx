@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { RemoveFromCartButton } from "@/components/cart/remove-button";
 import { CheckoutButton } from "@/components/cart/checkout-button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 
 interface CartItem {
   id: string;
@@ -62,7 +62,7 @@ export default async function CartPage() {
               <p className="text-muted-foreground mb-6">
                 Browse our courses and add some to your cart
               </p>
-              <Button asChild>
+              <Button>
                 <Link href="/courses">Browse Courses</Link>
               </Button>
             </CardContent>

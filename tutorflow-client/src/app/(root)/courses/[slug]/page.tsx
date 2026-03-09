@@ -12,7 +12,7 @@ import {
   Award,
   FileText,
 } from "lucide-react";
-import { serverApi } from "@/lib/server-api";
+import { serverApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddToCartButton } from "@/components/course/add-to-cart-button";

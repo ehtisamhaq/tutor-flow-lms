@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import api from "@/lib/api";
 import { Progress } from "../ui/progress";
 import { getAccessToken } from "@/app/(auth)/lib/actions";
+import api from "@/lib/api";
 
 interface VideoUploaderProps {
   lessonId: string;
@@ -130,10 +130,9 @@ export function VideoUploader({
 
     try {
       const token = await getAccessToken();
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const uploadUrl = apiUrl.includes("/api/v1")
-        ? `${apiUrl}/videos/lessons/${lessonId}/upload`
-        : `${apiUrl.replace(/\/$/, "")}/api/v1/videos/lessons/${lessonId}/upload`;
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const uploadUrl = `${apiUrl.replace(/\/$/, "")}/videos/lessons/${lessonId}/upload`;
 
       console.log("Direct Upload URL:", uploadUrl);
       console.log("Token retrieved from server action:", !!token);

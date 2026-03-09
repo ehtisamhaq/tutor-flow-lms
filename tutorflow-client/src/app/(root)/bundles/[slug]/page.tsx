@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { serverFetch } from "@/lib/server-api";
+import { serverFetch } from "@/lib/api";
 import { Package, Check, Clock, Users, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

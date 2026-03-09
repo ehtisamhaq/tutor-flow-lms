@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./tutorflow-server/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./tutorflow-server/scripts:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -75,62 +75,82 @@ services:
       exit 0;
       "
 
-  server:
-    build:
-      context: ./tutorflow-server
-      dockerfile: Dockerfile
-    container_name: tutorflow_server
-    environment:
-      - APP_ENV=${APP_ENV}
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - STORAGE_DRIVER=${STORAGE_DRIVER}
-      - STORAGE_S3_ENDPOINT=${STORAGE_S3_ENDPOINT}
-      - STORAGE_S3_REGION=${STORAGE_S3_REGION}
-      - STORAGE_S3_BUCKET=${STORAGE_S3_BUCKET}
-      - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}
-      - STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY}
-      - STORAGE_USE_SSL=${STORAGE_USE_SSL}
-      - STORAGE_CDN_BASE_URL=${STORAGE_CDN_BASE_URL}
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    volumes:
-      - ./tutorflow-server/uploads:/app/uploads
-      - ./tutorflow-server/config:/app/config
+#  server:
+#    build:
+#      context: ./tutorflow-server
+#      dockerfile: Dockerfile
+#    container_name: tutorflow_server
+#    environment:
+#      - APP_ENV=${APP_ENV}
+#      - DATABASE_HOST=${DATABASE_HOST}
+#      - DATABASE_PORT=${DATABASE_PORT}
+#      - DATABASE_USER=${DATABASE_USER}
+#      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+#      - DATABASE_NAME=${DATABASE_NAME}
+#      - REDIS_HOST=${REDIS_HOST}
+#      - REDIS_PORT=${REDIS_PORT}
+#      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+#      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+#      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+#      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+#      - STORAGE_DRIVER=${STORAGE_DRIVER}
+#      - STORAGE_S3_ENDPOINT=${STORAGE_S3_ENDPOINT}
+#      - STORAGE_S3_REGION=${STORAGE_S3_REGION}
+#      - STORAGE_S3_BUCKET=${STORAGE_S3_BUCKET}
+#      - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}
+#      - STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY}
+#      - STORAGE_USE_SSL=${STORAGE_USE_SSL}
+#      - STORAGE_CDN_BASE_URL=${STORAGE_CDN_BASE_URL}
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      minio:
+#        condition: service_healthy
+#    volumes:
+#      - ./tutorflow-server/uploads:/app/uploads
+#      - ./tutorflow-server/config:/app/config
+#    develop:
+#      watch:
+#        - action: rebuild
+#          path: ./tutorflow-server/go.mod
+#        - action: sync
+#          path: ./tutorflow-server
+#          target: /app
+#          ignore:
+#            - bin/
+#            - uploads/
 
-  client:
-    build:
-      context: ./tutorflow-client
-      dockerfile: Dockerfile
-      target: dev
-    container_name: tutorflow_client
-    environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - BACKEND_API_URL=${BACKEND_API_URL}
-    ports:
-      - "3000:3000"
-    depends_on:
-      - server
-    volumes:
-      - ./tutorflow-client:/app
-      - /app/node_modules
-      - /app/.next
+#  client:
+#    build:
+#      context: ./tutorflow-client
+#      dockerfile: Dockerfile
+#      target: dev
+#    container_name: tutorflow_client
+#    environment:
+#      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+#      - BACKEND_API_URL=${BACKEND_API_URL}
+#    ports:
+#      - "3000:3000"
+#    depends_on:
+#      - server
+#    volumes:
+#      - ./tutorflow-client:/app
+#      - /app/node_modules
+#      - /app/.next
+#    develop:
+#      watch:
+#        - action: rebuild
+#          path: ./tutorflow-client/package.json
+#        - action: sync
+#          path: ./tutorflow-client
+#          target: /app
+#          ignore:
+#            - node_modules/
+#            - .next/
 
 volumes:
   postgres_data:

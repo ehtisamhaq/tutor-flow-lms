@@ -4,7 +4,7 @@ import {
   authServerFetch,
   type PaginatedResponse,
   type Course,
-} from "@/lib/server-api";
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Eye, EyeOff, Plus, Star, Users } from "lucide-react";
@@ -42,7 +42,7 @@ export default async function AdminCoursesPage({
             Manage all courses on the platform
           </p>
         </div>
-        <Button asChild>
+        <Button>
           <Link href="/admin/courses/create">
             <Plus className="mr-2 h-4 w-4" />
             Add Course
@@ -58,7 +58,6 @@ export default async function AdminCoursesPage({
               key={s}
               variant={status === s ? "default" : "outline"}
               size="sm"
-              asChild
             >
               <Link href={`/admin/courses${s ? `?status=${s}` : ""}`}>
                 {s || "All"}

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import {
   Users,
   BookOpen,

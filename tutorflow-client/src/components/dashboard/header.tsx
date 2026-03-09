@@ -19,7 +19,7 @@ export function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon">
             <Link href="/cart" className="relative">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (

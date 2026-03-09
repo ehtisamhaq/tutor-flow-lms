@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { GraduationCap, Play, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
+import { authServerFetch, type PaginatedResponse } from "@/lib/api";
 
 interface Enrollment {
   id: string;
@@ -25,9 +25,8 @@ interface Enrollment {
 
 // Server Component with SSR data fetching
 export default async function MyCoursesPage() {
-  const data = await authServerFetch<PaginatedResponse<Enrollment>>(
-    "/enrollments/my"
-  );
+  const data =
+    await authServerFetch<PaginatedResponse<Enrollment>>("/enrollments/my");
 
   // Redirect to login if not authenticated
   if (data === null) {
@@ -46,7 +45,7 @@ export default async function MyCoursesPage() {
             enrolled
           </p>
         </div>
-        <Button asChild>
+        <Button>
           <Link href="/courses">Browse More</Link>
         </Button>
       </div>
@@ -59,7 +58,7 @@ export default async function MyCoursesPage() {
             <p className="text-muted-foreground mb-6">
               Start your learning journey by enrolling in a course
             </p>
-            <Button asChild>
+            <Button>
               <Link href="/courses">Browse Courses</Link>
             </Button>
           </CardContent>
@@ -117,7 +116,7 @@ export default async function MyCoursesPage() {
                   </div>
                 </div>
 
-                <Button className="w-full" asChild>
+                <Button className="w-full">
                   <Link href={`/learn/${enrollment.course.slug}`}>
                     <Play className="mr-2 h-4 w-4" />
                     {enrollment.progress > 0 ? "Continue" : "Start Learning"}

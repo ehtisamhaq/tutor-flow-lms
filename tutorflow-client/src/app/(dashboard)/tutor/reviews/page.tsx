@@ -6,7 +6,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import {
   Star,
   MessageSquare,

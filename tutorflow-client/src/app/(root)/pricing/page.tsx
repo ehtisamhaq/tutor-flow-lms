@@ -7,7 +7,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { serverFetch } from "@/lib/server-api";
+import { serverFetch } from "@/lib/api";
 import { Check } from "lucide-react";
 import Link from "next/link";
 
@@ -128,7 +128,7 @@ export default async function PricingPage() {
                   <p className="text-sm text-muted-foreground mb-6">
                     or ${plan.price_yearly}/year (save{" "}
                     {Math.round(
-                      (1 - plan.price_yearly / (plan.price_monthly * 12)) * 100
+                      (1 - plan.price_yearly / (plan.price_monthly * 12)) * 100,
                     )}
                     %)
                   </p>
@@ -154,7 +154,6 @@ export default async function PricingPage() {
                 <Button
                   className="w-full"
                   variant={index === 1 ? "default" : "outline"}
-                  asChild
                 >
                   <Link href={`/subscribe/${plan.slug}`}>
                     {plan.price_monthly === 0 ? "Get Started" : "Subscribe"}

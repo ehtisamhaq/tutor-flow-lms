@@ -116,7 +116,7 @@ function SuccessContent() {
             We couldn't find your order details, but don't worry—your enrollment
             is being processed. Check your dashboard in a few minutes.
           </p>
-          <Button asChild variant="outline">
+          <Button variant="outline">
             <Link href="/dashboard">Go to Dashboard</Link>
           </Button>
         </CardContent>
@@ -239,7 +239,6 @@ function SuccessContent() {
 
           <div className="grid gap-4">
             <Button
-              asChild
               size="lg"
               className="h-14 text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-xl transition-all"
             >
@@ -248,7 +247,7 @@ function SuccessContent() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="h-14">
+            <Button variant="outline" size="lg" className="h-14">
               <Link href="/courses">Browse More Courses</Link>
             </Button>
           </div>

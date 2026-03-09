@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import {
   DollarSign,
   TrendingUp,

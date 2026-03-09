@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { MessageSquare, Send, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 
 interface Conversation {
   id: string;

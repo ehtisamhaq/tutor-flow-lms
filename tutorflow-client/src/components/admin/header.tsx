@@ -16,7 +16,7 @@ export function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm">
             <Link href="/" target="_blank">
               <ExternalLink className="h-4 w-4 mr-2" />
               View Site

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Clock, Users, GraduationCap } from "lucide-react";
-import { serverApi, type Course } from "@/lib/server-api";
+import { serverApi, type Course } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
@@ -39,7 +39,7 @@ export default async function CoursesPage({
         ) : (
           <div className="text-center py-16">
             <p className="text-muted-foreground mb-4">No courses found</p>
-            <Button asChild>
+            <Button>
               <Link href="/courses">View All Courses</Link>
             </Button>
           </div>
@@ -49,7 +49,7 @@ export default async function CoursesPage({
         {data && data.total > 12 && (
           <div className="flex justify-center gap-2 mt-8">
             {page > 1 && (
-              <Button variant="outline" asChild>
+              <Button variant="outline">
                 <Link
                   href={`/courses?page=${page - 1}${
                     search ? `&search=${search}` : ""
@@ -60,7 +60,7 @@ export default async function CoursesPage({
               </Button>
             )}
             {page * 12 < data.total && (
-              <Button variant="outline" asChild>
+              <Button variant="outline">
                 <Link
                   href={`/courses?page=${page + 1}${
                     search ? `&search=${search}` : ""

@@ -6,7 +6,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import { Check, X, Calendar, CreditCard, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
@@ -71,7 +71,7 @@ export default async function SubscriptionPage() {
             <p className="text-muted-foreground mb-6">
               Unlock premium features with a subscription plan.
             </p>
-            <Button asChild>
+            <Button>
               <Link href="/pricing">View Plans</Link>
             </Button>
           </CardContent>
@@ -113,7 +113,7 @@ export default async function SubscriptionPage() {
             </div>
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(
-                subscription.status
+                subscription.status,
               )}`}
             >
               {subscription.status}
@@ -174,7 +174,7 @@ export default async function SubscriptionPage() {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 pt-4 border-t">
-            <Button variant="outline" asChild>
+            <Button variant="outline">
               <Link href="/pricing">Change Plan</Link>
             </Button>
             {subscription.cancel_at_period_end ? (
@@ -182,7 +182,7 @@ export default async function SubscriptionPage() {
                 <Button type="submit">Resume Subscription</Button>
               </form>
             ) : (
-              <Button variant="destructive" asChild>
+              <Button variant="destructive">
                 <Link href="/dashboard/subscription/cancel">
                   Cancel Subscription
                 </Link>

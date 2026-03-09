@@ -6,7 +6,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { serverFetch } from "@/lib/server-api";
+import { serverFetch } from "@/lib/api";
 import { Package, Clock, Tag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -64,7 +64,7 @@ export default async function BundlesPage() {
             <p className="text-muted-foreground mb-6">
               Check back soon for exciting course bundles!
             </p>
-            <Button asChild>
+            <Button>
               <Link href="/courses">Browse Individual Courses</Link>
             </Button>
           </div>
@@ -158,7 +158,7 @@ export default async function BundlesPage() {
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full" asChild>
+                  <Button className="w-full">
                     <Link href={`/bundles/${bundle.slug}`}>View Bundle</Link>
                   </Button>
                 </CardFooter>

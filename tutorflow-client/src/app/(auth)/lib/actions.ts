@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createSession, deleteSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { User } from "@/store/auth-store";
+import { authApi } from "@/lib/api";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
@@ -38,33 +39,12 @@ export async function login(
   }
 
   const { email, password } = validatedFields.data;
-  const BACKEND_URL =
-    process.env.BACKEND_API_URL || "http://localhost:8080/api/v1";
 
   let redirectPath = null;
 
   try {
-    const response = await fetch(`${BACKEND_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-    console.log(data);
-
-    if (!response.ok) {
-      toast.error(data.error?.message || "Invalid credentials");
-      return {
-        errors: {
-          form: [data.error?.message || "Invalid credentials"],
-        },
-      };
-    }
-
-    const { user, tokens } = data.data;
+    const { data } = await authApi.login({ email, password });
+    const { user, tokens } = data;
 
     await createSession(tokens.access_token, tokens.refresh_token);
 
@@ -108,4 +88,35 @@ export async function getAccessToken() {
 export async function logout() {
   await deleteSession();
   redirect("/login");
+}
+
+export async function getDemoCredentials(role: string) {
+  if (process.env.NODE_ENV !== "development") {
+    return null;
+  }
+
+  switch (role) {
+    case "admin":
+      return {
+        email: process.env.DEMO_ADMIN_EMAIL || "admin@tutorflow.com",
+        password: process.env.DEMO_ADMIN_PASSWORD || "password123",
+      };
+    case "manager":
+      return {
+        email: process.env.DEMO_MANAGER_EMAIL || "manager@tutorflow.com",
+        password: process.env.DEMO_MANAGER_PASSWORD || "password123",
+      };
+    case "tutor":
+      return {
+        email: process.env.DEMO_TUTOR_EMAIL || "tutor@tutorflow.com",
+        password: process.env.DEMO_TUTOR_PASSWORD || "password123",
+      };
+    case "student":
+      return {
+        email: process.env.DEMO_STUDENT_EMAIL || "student@tutorflow.com",
+        password: process.env.DEMO_STUDENT_PASSWORD || "password123",
+      };
+    default:
+      return null;
+  }
 }

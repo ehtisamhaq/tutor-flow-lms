@@ -4,7 +4,7 @@ import {
   authServerFetch,
   type Course,
   type PaginatedResponse,
-} from "@/lib/server-api";
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,9 +25,8 @@ interface TutorCourse extends Course {
 
 // Server Component
 export default async function TutorCoursesPage() {
-  const data = await authServerFetch<PaginatedResponse<TutorCourse>>(
-    "/courses/my"
-  );
+  const data =
+    await authServerFetch<PaginatedResponse<TutorCourse>>("/courses/my");
   const courses = data?.items || [];
 
   return (
@@ -39,7 +38,7 @@ export default async function TutorCoursesPage() {
             Create and manage your courses
           </p>
         </div>
-        <Button asChild>
+        <Button>
           <Link href="/tutor/courses/new">
             <Plus className="mr-2 h-4 w-4" />
             Create Course
@@ -55,7 +54,7 @@ export default async function TutorCoursesPage() {
             <p className="text-muted-foreground mb-6">
               Create your first course and start teaching
             </p>
-            <Button asChild>
+            <Button>
               <Link href="/tutor/courses/new">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Course
@@ -86,8 +85,8 @@ export default async function TutorCoursesPage() {
                       course.status === "published"
                         ? "bg-green-600 text-white"
                         : course.status === "draft"
-                        ? "bg-yellow-600 text-white"
-                        : "bg-gray-600 text-white"
+                          ? "bg-yellow-600 text-white"
+                          : "bg-gray-600 text-white"
                     }`}
                   >
                     {course.status === "published" ? (
@@ -118,7 +117,7 @@ export default async function TutorCoursesPage() {
                     ${course.price.toFixed(2)}
                   </span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" asChild>
+                    <Button size="sm" variant="outline">
                       <Link href={`/tutor/courses/${course.id}`}>
                         <Edit className="h-4 w-4" />
                       </Link>

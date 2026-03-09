@@ -1,11 +1,11 @@
-import { api } from "./api";
-import { Module, Lesson } from "./server-api"; // Import types
+import { api } from "./client";
+import { Module, Lesson } from "./server"; // Import types from the adjacent server utility
 
 export const courseApi = {
   // --- Modules ---
   createModule: async (
     courseId: string,
-    data: { title: string; order: number }
+    data: { title: string; order: number },
   ) => {
     return api.post(`/courses/${courseId}/modules`, data);
   },
@@ -13,7 +13,7 @@ export const courseApi = {
   updateModule: async (
     courseId: string,
     moduleId: string,
-    data: { title?: string; order?: number; is_published?: boolean }
+    data: { title?: string; order?: number; is_published?: boolean },
   ) => {
     return api.put(`/courses/${courseId}/modules/${moduleId}`, data);
   },
@@ -39,7 +39,7 @@ export const courseApi = {
       content?: string;
       video_url?: string;
       duration_minutes?: number;
-    }
+    },
   ) => {
     const { type, order, ...rest } = data;
     return api.post(`/courses/modules/${moduleId}/lessons`, {
@@ -61,7 +61,7 @@ export const courseApi = {
       order?: number;
       is_published?: boolean;
       is_preview?: boolean;
-    }
+    },
   ) => {
     return api.put(`/courses/modules/${moduleId}/lessons/${lessonId}`, data);
   },

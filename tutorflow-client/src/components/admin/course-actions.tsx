@@ -53,7 +53,7 @@ export function CourseActions({
       toast.success(
         isFeatured
           ? "Course removed from featured"
-          : "Course marked as featured"
+          : "Course marked as featured",
       );
       router.refresh();
       setIsOpen(false);
@@ -93,49 +93,47 @@ export function CourseActions({
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-zinc-900 ring-1 ring-black ring-opacity-5 z-20 overflow-hidden border border-zinc-200 dark:border-zinc-800">
-            <div className="py-1">
-              <button
-                onClick={() => handleUpdateStatus("published")}
-                className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <Eye className="mr-2 h-4 w-4" /> Publish
-              </button>
-              <button
-                onClick={() => handleUpdateStatus("draft")}
-                className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <EyeOff className="mr-2 h-4 w-4" /> Set to Draft
-              </button>
-              <button
-                onClick={() => handleUpdateStatus("archived")}
-                className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <Archive className="mr-2 h-4 w-4" /> Archive
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
-              <button
-                onClick={handleToggleFeatured}
-                className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <Star
-                  className={`mr-2 h-4 w-4 ${
-                    isFeatured ? "fill-yellow-400 text-yellow-400" : ""
-                  }`}
-                />
-                {isFeatured ? "Unfeature" : "Feature"}
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
-              <button
-                onClick={handleDelete}
-                className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Course
-              </button>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}>
+            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-zinc-900 ring-1 ring-black ring-opacity-5 z-20 overflow-hidden border border-zinc-200 dark:border-zinc-800">
+              <div className="py-1">
+                <button
+                  onClick={() => handleUpdateStatus("published")}
+                  className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <Eye className="mr-2 h-4 w-4" /> Publish
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus("draft")}
+                  className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <EyeOff className="mr-2 h-4 w-4" /> Set to Draft
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus("archived")}
+                  className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <Archive className="mr-2 h-4 w-4" /> Archive
+                </button>
+                <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+                <button
+                  onClick={handleToggleFeatured}
+                  className="flex w-full items-center px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <Star
+                    className={`mr-2 h-4 w-4 ${
+                      isFeatured ? "fill-yellow-400 text-yellow-400" : ""
+                    }`}
+                  />
+                  {isFeatured ? "Unfeature" : "Feature"}
+                </button>
+                <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+                <button
+                  onClick={handleDelete}
+                  className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete Course
+                </button>
+              </div>
             </div>
           </div>
         </>

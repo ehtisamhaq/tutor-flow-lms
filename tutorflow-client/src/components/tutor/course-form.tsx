@@ -29,8 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import api from "@/lib/api";
-import { cn } from "@/lib/utils";
+
 import {
   createCourseAction,
   updateCourseAction,
@@ -45,7 +44,7 @@ import {
 import { QuizEditor } from "./quiz-editor";
 import { VideoUploader } from "./video-uploader";
 import React from "react";
-// import { courseApi } from "@/lib/course-api"; // Migrated to Server Actions
+// import { courseApi } from "@/lib/api"; // Migrated to Server Actions
 
 // Validation schema
 const courseSchema = z.object({
@@ -791,7 +790,7 @@ export function CourseForm({
 
       {/* Submit */}
       <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
-        <Button type="button" variant="outline" asChild>
+        <Button type="button" variant="outline">
           <a href={`${basePath}/courses`}>Cancel</a>
         </Button>
 

@@ -37,13 +37,13 @@ export default function CheckoutCancelPage() {
           </p>
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-4 justify-center pb-10">
-          <Button asChild size="lg" className="px-8">
+          <Button size="lg" className="px-8">
             <Link href="/cart">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Return to Cart
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="px-8">
+          <Button variant="outline" size="lg" className="px-8">
             <Link href="/pricing">View Plans</Link>
           </Button>
         </CardFooter>

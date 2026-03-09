@@ -145,6 +145,18 @@ export interface Category {
   course_count: number;
 }
 
+export interface LearningPath {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail_url?: string;
+  level: "beginner" | "intermediate" | "advanced";
+  duration_hours: number;
+  course_count: number;
+  courses: Course[];
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -187,6 +199,14 @@ export const serverApi = {
     list: async () => {
       const result = await serverFetch<Category[]>("/courses/categories");
       return result || [];
+    },
+  },
+
+  learningPaths: {
+    list: async () => {
+      const result =
+        await serverFetch<PaginatedResponse<LearningPath>>("/learning-paths");
+      return result?.items || [];
     },
   },
 };

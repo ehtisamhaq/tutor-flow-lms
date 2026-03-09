@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Bell, BookOpen, MessageSquare, Award, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
+import { authServerFetch, type PaginatedResponse } from "@/lib/api";
 
 interface Notification {
   id: string;

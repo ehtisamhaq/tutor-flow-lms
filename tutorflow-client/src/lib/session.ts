@@ -1,6 +1,5 @@
-import "server-only";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { cache } from "react";
 
 export async function createSession(accessToken: string, refreshToken: string) {
   const cookieStore = await cookies();
@@ -28,9 +27,28 @@ export async function deleteSession() {
   cookieStore.delete("refreshToken");
 }
 
-export async function getSession() {
+import { authApi } from "./api";
+
+export const getSession = cache(async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const refreshToken = cookieStore.get("refreshToken")?.value;
-  return { accessToken, refreshToken };
-}
+
+  if (!accessToken) return null;
+
+  try {
+    const { data: user } = await authApi.getMe();
+
+    if (!user) return null;
+
+    return {
+      accessToken,
+      refreshToken,
+      ...user,
+    };
+  } catch (error) {
+    // If it's a 401, authApi might have already handled it or we handle it here
+    console.error("Session verification failed:", error);
+    return null;
+  }
+});

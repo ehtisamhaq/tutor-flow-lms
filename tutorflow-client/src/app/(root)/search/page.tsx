@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Clock, Users, GraduationCap, Search } from "lucide-react";
-import { serverApi, type Course } from "@/lib/server-api";
+import { serverApi, type Course } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { SearchForm } from "@/components/search/search-form";
@@ -51,7 +51,7 @@ export default async function SearchPage({
                 <p className="text-muted-foreground mb-6">
                   Try a different search term
                 </p>
-                <Button asChild>
+                <Button>
                   <Link href="/courses">Browse All Courses</Link>
                 </Button>
               </div>
@@ -61,14 +61,14 @@ export default async function SearchPage({
             {data && data.total > 12 && (
               <div className="flex justify-center gap-2 mt-8">
                 {page > 1 && (
-                  <Button variant="outline" asChild>
+                  <Button variant="outline">
                     <Link href={`/search?q=${query}&page=${page - 1}`}>
                       Previous
                     </Link>
                   </Button>
                 )}
                 {page * 12 < data.total && (
-                  <Button variant="outline" asChild>
+                  <Button variant="outline">
                     <Link href={`/search?q=${query}&page=${page + 1}`}>
                       Next
                     </Link>

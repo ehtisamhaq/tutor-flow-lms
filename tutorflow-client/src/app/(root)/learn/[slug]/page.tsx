@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { GraduationCap } from "lucide-react";
 import { LearningContent } from "@/components/learn/learning-content";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 
 interface Module {
   id: string;

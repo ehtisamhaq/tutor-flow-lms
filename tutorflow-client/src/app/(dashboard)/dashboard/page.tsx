@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BookOpen, Clock, Award, TrendingUp, Play } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
+import { authServerFetch, type PaginatedResponse } from "@/lib/api";
 import { redirect } from "next/navigation";
 
 interface DashboardStats {
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
             Here&apos;s what&apos;s happening with your learning
           </p>
         </div>
-        <Button asChild variant="outline">
+        <Button variant="outline">
           <Link href="/courses">Explore courses</Link>
         </Button>
       </div>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Continue Learning</CardTitle>
           {recentEnrollment && (
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm">
               <Link href="/dashboard/my-courses">View all</Link>
             </Button>
           )}
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
                   />
                 </div>
 
-                <Button className="w-full md:w-auto" asChild>
+                <Button className="w-full md:w-auto">
                   <Link href={`/learn/${recentEnrollment.course.slug}`}>
                     <Play className="mr-2 h-4 w-4" />
                     {recentEnrollment.progress_percent > 0
@@ -151,7 +151,7 @@ export default async function DashboardPage() {
               <p className="text-sm mb-6 max-w-xs mx-auto">
                 Explore our catalog to find your next learning adventure.
               </p>
-              <Button asChild>
+              <Button>
                 <Link href="/courses">Browse Catalog</Link>
               </Button>
             </div>

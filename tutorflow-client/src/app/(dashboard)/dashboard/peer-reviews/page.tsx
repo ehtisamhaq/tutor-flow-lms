@@ -6,7 +6,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authServerFetch } from "@/lib/server-api";
+import { authServerFetch } from "@/lib/api";
 import {
   ClipboardCheck,
   Clock,
@@ -64,12 +64,12 @@ function getStatusColor(status: string, dueAt: string) {
 
 export default async function PeerReviewsPage() {
   const assignments = await authServerFetch<AssignmentsResponse>(
-    "/peer-reviews/my-assignments"
+    "/peer-reviews/my-assignments",
   );
 
   const pendingReviews =
     assignments?.items?.filter(
-      (a) => a.status === "assigned" || a.status === "pending"
+      (a) => a.status === "assigned" || a.status === "pending",
     ) || [];
 
   const overdueReviews = pendingReviews.filter((a) => isOverdue(a.due_at));
@@ -197,7 +197,7 @@ export default async function PeerReviewsPage() {
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                         assignment.status,
-                        assignment.due_at
+                        assignment.due_at,
                       )}`}
                     >
                       {isOverdue(assignment.due_at) &&
@@ -205,7 +205,7 @@ export default async function PeerReviewsPage() {
                         ? "Overdue"
                         : assignment.status}
                     </span>
-                    <Button asChild>
+                    <Button>
                       <Link href={`/dashboard/peer-reviews/${assignment.id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Review

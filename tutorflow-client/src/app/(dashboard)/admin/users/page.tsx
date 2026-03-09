@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { authServerFetch, type PaginatedResponse } from "@/lib/server-api";
+import { authServerFetch, type PaginatedResponse } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserSearch } from "@/components/admin/user-search";
@@ -57,7 +57,7 @@ export default async function AdminUsersPage({
   if (query) queryParts.push(`search=${encodeURIComponent(query)}`);
 
   const users = await authServerFetch<PaginatedResponse<AdminUser>>(
-    `/users?${queryParts.join("&")}`
+    `/users?${queryParts.join("&")}`,
   );
 
   return (
@@ -69,7 +69,7 @@ export default async function AdminUsersPage({
             Manage all users on the platform
           </p>
         </div>
-        <Button asChild>
+        <Button>
           <Link href="/admin/users/new">
             <Plus className="mr-2 h-4 w-4" />
             Add User
@@ -85,7 +85,6 @@ export default async function AdminUsersPage({
               key={r}
               variant={role === r ? "default" : "outline"}
               size="sm"
-              asChild
             >
               <Link
                 href={`/admin/users?role=${r}${query ? `&q=${query}` : ""}`}
@@ -130,7 +129,7 @@ export default async function AdminUsersPage({
                     <div className="flex items-center gap-4">
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight ${getRoleBadgeColor(
-                          user.role
+                          user.role,
                         )}`}
                       >
                         {user.role}
@@ -140,8 +139,8 @@ export default async function AdminUsersPage({
                           user.status === "active"
                             ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                             : user.status === "suspended"
-                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                            : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
                         }`}
                       >
                         {user.status}
@@ -165,7 +164,7 @@ export default async function AdminUsersPage({
       {users && users.total > 20 && (
         <div className="flex justify-center gap-2">
           {page > 1 && (
-            <Button variant="outline" asChild>
+            <Button variant="outline">
               <Link
                 href={`/admin/users?page=${page - 1}${
                   role ? `&role=${role}` : ""
@@ -176,7 +175,7 @@ export default async function AdminUsersPage({
             </Button>
           )}
           {page * 20 < users.total && (
-            <Button variant="outline" asChild>
+            <Button variant="outline">
               <Link
                 href={`/admin/users?page=${page + 1}${
                   role ? `&role=${role}` : ""

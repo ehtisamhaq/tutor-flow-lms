@@ -58,13 +58,13 @@ export default function HomePage() {
               expert-led content. Start your learning journey today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
+              <Button size="lg">
                 <Link href="/courses">
                   Explore Courses
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline">
                 <Link href="/register">
                   <Play className="mr-2 h-5 w-5" />
                   Start Free Trial
@@ -132,7 +132,6 @@ export default function HomePage() {
                 size="lg"
                 variant="secondary"
                 className="bg-white text-primary hover:bg-white/90"
-                asChild
               >
                 <Link href="/register">Get Started for Free</Link>
               </Button>

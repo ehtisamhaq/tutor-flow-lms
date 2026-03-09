@@ -107,7 +107,7 @@ export default function NewBundlePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="ghost" size="sm">
           <Link href="/admin/bundles">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -311,7 +311,7 @@ export default function NewBundlePage() {
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" asChild>
+          <Button type="button" variant="outline">
             <Link href="/admin/bundles">Cancel</Link>
           </Button>
           <Button

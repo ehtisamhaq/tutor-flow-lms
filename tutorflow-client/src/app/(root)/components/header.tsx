@@ -43,13 +43,13 @@ export default async function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon">
             <Link href="/search">
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon">
             <Link href="/cart">
               <ShoppingCart className="h-5 w-5" />
               <span className="sr-only">Cart</span>
@@ -57,15 +57,15 @@ export default async function Header() {
           </Button>
 
           {isAuthenticated ? (
-            <Button asChild>
+            <Button>
               <Link href="/dashboard">Go to Dashboard</Link>
             </Button>
           ) : (
             <>
-              <Button variant="ghost" asChild>
+              <Button variant="ghost">
                 <Link href="/login">Sign In</Link>
               </Button>
-              <Button asChild>
+              <Button>
                 <Link href="/register">Get Started</Link>
               </Button>
             </>
