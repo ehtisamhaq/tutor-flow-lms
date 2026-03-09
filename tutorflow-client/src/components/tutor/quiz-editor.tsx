@@ -344,7 +344,7 @@ export function QuizEditor({ lessonId, lessonTitle }: QuizEditorProps) {
                 <Select
                   value={questionForm.type}
                   onValueChange={(v) =>
-                    setQuestionForm({ ...questionForm, type: v })
+                    setQuestionForm({ ...questionForm, type: v as string })
                   }
                 >
                   <SelectTrigger>
