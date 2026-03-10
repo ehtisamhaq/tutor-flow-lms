@@ -19,4 +19,5 @@ type StorageService interface {
 	UploadHLSFiles(ctx context.Context, localDir string, s3Prefix string) error
 	GetFileStream(ctx context.Context, path string) (io.ReadCloser, string, error)
 	GetBucket() string
+	GetBasePath() string
 }

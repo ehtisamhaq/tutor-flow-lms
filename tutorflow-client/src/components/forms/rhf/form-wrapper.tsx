@@ -19,8 +19,11 @@ export interface FormWrapperProps<TFormValues extends FieldValues> {
   schema: z.ZodType<TFormValues>;
   /** Default values matching the schema shape */
   defaultValues: DefaultValues<TFormValues>;
-  /** Called with validated values on successful submission */
-  onSubmit: (values: TFormValues) => Promise<void> | void;
+  /** Called with validated values and the form instance on successful submission */
+  onSubmit: (
+    values: TFormValues,
+    form: UseFormReturn<TFormValues>,
+  ) => Promise<void> | void;
   /** Optional cancel handler */
   onCancel?: () => void;
   /** Form content - can be JSX or render function receiving form instance */
@@ -91,11 +94,12 @@ export function FormWrapper<TFormValues extends FieldValues>({
   const defaultSubmitLabel = isEditMode ? "Save Changes" : "Create";
   const { isSubmitting } = form.formState;
 
-  console.log("Form errors:", form.formState.errors);
-
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
+      <form
+        onSubmit={form.handleSubmit((values) => onSubmit(values, form))}
+        className={className}
+      >
         <FieldGroup>
           {typeof children === "function" ? children(form) : children}
         </FieldGroup>

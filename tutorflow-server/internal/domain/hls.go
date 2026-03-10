@@ -144,6 +144,7 @@ type VideoUseCase interface {
 	// Playback
 	GetPlaybackURL(ctx context.Context, lessonID, userID uuid.UUID, deviceID string) (string, error)
 	GetEncryptionKey(ctx context.Context, token string) ([]byte, error)
+	GetEncryptionKeyByVideoID(ctx context.Context, videoID uuid.UUID) ([]byte, error)
 	ValidatePlayback(ctx context.Context, token string) error
 	GetVideoSegment(ctx context.Context, videoID uuid.UUID, segment string) (io.ReadCloser, string, error)
 

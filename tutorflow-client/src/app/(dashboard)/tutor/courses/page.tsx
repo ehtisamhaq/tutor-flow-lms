@@ -38,11 +38,9 @@ export default async function TutorCoursesPage() {
             Create and manage your courses
           </p>
         </div>
-        <Button>
-          <Link href="/tutor/courses/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Course
-          </Link>
+        <Button render={<Link href="/tutor/courses/new" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Course
         </Button>
       </div>
 
@@ -54,11 +52,9 @@ export default async function TutorCoursesPage() {
             <p className="text-muted-foreground mb-6">
               Create your first course and start teaching
             </p>
-            <Button>
-              <Link href="/tutor/courses/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Course
-              </Link>
+            <Button render={<Link href="/tutor/courses/new" />}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Course
             </Button>
           </CardContent>
         </Card>
@@ -117,10 +113,12 @@ export default async function TutorCoursesPage() {
                     ${course.price.toFixed(2)}
                   </span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Link href={`/tutor/courses/${course.id}`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      render={<Link href={`/tutor/courses/${course.id}`} />}
+                    >
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost">
                       <MoreHorizontal className="h-4 w-4" />

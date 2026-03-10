@@ -30,6 +30,11 @@ func (s *Service) GetBucket() string {
 	return s.cfg.S3Bucket
 }
 
+// GetBasePath returns the local storage base path
+func (s *Service) GetBasePath() string {
+	return s.basePath
+}
+
 // NewService creates a new storage service
 func NewService(cfg config.StorageConfig) *Service {
 	svc := &Service{

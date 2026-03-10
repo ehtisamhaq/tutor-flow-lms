@@ -45,9 +45,7 @@ export default async function MyCoursesPage() {
             enrolled
           </p>
         </div>
-        <Button>
-          <Link href="/courses">Browse More</Link>
-        </Button>
+        <Button render={<Link href="/courses" />}>Browse More</Button>
       </div>
 
       {enrollments.length === 0 ? (
@@ -58,9 +56,7 @@ export default async function MyCoursesPage() {
             <p className="text-muted-foreground mb-6">
               Start your learning journey by enrolling in a course
             </p>
-            <Button>
-              <Link href="/courses">Browse Courses</Link>
-            </Button>
+            <Button render={<Link href="/courses" />}>Browse Courses</Button>
           </CardContent>
         </Card>
       ) : (
@@ -116,11 +112,12 @@ export default async function MyCoursesPage() {
                   </div>
                 </div>
 
-                <Button className="w-full">
-                  <Link href={`/learn/${enrollment.course.slug}`}>
-                    <Play className="mr-2 h-4 w-4" />
-                    {enrollment.progress > 0 ? "Continue" : "Start Learning"}
-                  </Link>
+                <Button
+                  className="w-full"
+                  render={<Link href={`/learn/${enrollment.course.slug}`} />}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  {enrollment.progress > 0 ? "Continue" : "Start Learning"}
                 </Button>
               </CardContent>
             </Card>

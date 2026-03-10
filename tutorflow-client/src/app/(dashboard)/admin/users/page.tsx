@@ -69,11 +69,9 @@ export default async function AdminUsersPage({
             Manage all users on the platform
           </p>
         </div>
-        <Button>
-          <Link href="/admin/users/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add User
-          </Link>
+        <Button render={<Link href="/admin/users/new" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add User
         </Button>
       </div>
 

@@ -175,8 +175,11 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 
 	isRemote := strings.HasPrefix(asset.OriginalURL, "http://") || strings.HasPrefix(asset.OriginalURL, "https://")
 
-	// Better isS3 detection: if it's remote and we are using S3 driver, or if it contains minio
-	isS3 := isRemote && (strings.Contains(asset.OriginalURL, "minio:9000") || strings.Contains(asset.OriginalURL, uc.storageService.GetBucket()))
+	// Better isS3 detection: if it's remote and we are using S3 driver, or if it contains bucket name
+	// Also check for localhost:9000 which is common for local MinIO
+	isS3 := isRemote && (strings.Contains(asset.OriginalURL, "minio") ||
+		strings.Contains(asset.OriginalURL, "localhost:9000") ||
+		strings.Contains(asset.OriginalURL, uc.storageService.GetBucket()))
 
 	if isRemote {
 		fmt.Printf("Video is remote (isS3: %v), downloading...\n", isS3)
@@ -239,13 +242,24 @@ func (uc *videoUseCase) ProcessVideo(ctx context.Context, videoID uuid.UUID) err
 		inputPath = tempInputFile
 		fmt.Printf("Downloaded video to: %s (size: %d bytes)\n", inputPath, size)
 	} else {
-		// Verify local file exists
-		if _, err := os.Stat(asset.OriginalURL); os.IsNotExist(err) {
-			if !filepath.IsAbs(asset.OriginalURL) {
-				cwd, _ := os.Getwd()
-				inputPath = filepath.Join(cwd, asset.OriginalURL)
-			}
+		// Local file - need to resolve the actual file path
+		// The URL returned by storage service is relative (e.g., /videos/originals/filename.mp4)
+		// But the actual file is stored at basePath + relative path
+		localPath := asset.OriginalURL
+
+		// Check if it's a relative path and resolve to actual file location
+		if !filepath.IsAbs(localPath) {
+			// Strip leading slash if present
+			localPath = strings.TrimPrefix(localPath, "/")
+			// Prepend the storage base path
+			localPath = filepath.Join(uc.storageService.GetBasePath(), localPath)
 		}
+
+		// Verify file exists
+		if _, err := os.Stat(localPath); os.IsNotExist(err) {
+			return uc.handleProcessingError(ctx, asset, fmt.Errorf("video file not found at: %s", localPath))
+		}
+		inputPath = localPath
 		fmt.Printf("Using local video path: %s\n", inputPath)
 	}
 
@@ -462,6 +476,21 @@ func (uc *videoUseCase) GetPlaybackURL(ctx context.Context, lessonID, userID uui
 	// e.g. /api/v1/videos/stream/:id/index.m3u8?token=...
 	playbackURL := fmt.Sprintf("/api/v1/videos/stream/%s/index.m3u8?token=%s", asset.ID, token)
 	return playbackURL, nil
+}
+
+// GetEncryptionKeyByVideoID returns the encryption key for a video by video ID
+func (uc *videoUseCase) GetEncryptionKeyByVideoID(ctx context.Context, videoID uuid.UUID) ([]byte, error) {
+	encryption, err := uc.videoRepo.GetEncryptionByVideoID(ctx, videoID)
+	if err != nil {
+		return nil, errors.New("encryption not configured")
+	}
+
+	key, err := hex.DecodeString(encryption.EncryptionKey)
+	if err != nil {
+		return nil, errors.New("invalid encryption key")
+	}
+
+	return key, nil
 }
 
 // GetEncryptionKey returns the encryption key for a video

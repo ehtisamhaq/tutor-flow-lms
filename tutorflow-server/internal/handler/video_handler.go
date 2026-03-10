@@ -41,8 +41,8 @@ func (h *VideoHandler) RegisterRoutes(e *echo.Group, authMiddleware echo.Middlew
 	drm.GET("/devices", h.GetDevices)
 	drm.DELETE("/devices/:deviceId", h.RemoveDevice)
 
-	// Key delivery (no auth - uses token)
-	e.GET("/drm/key/:token", h.GetEncryptionKey)
+	// Key delivery (no auth - uses videoId)
+	e.GET("/drm/key/:videoId", h.GetEncryptionKey)
 
 	// Admin routes
 	admin := e.Group("/admin/videos", authMiddleware)
@@ -322,9 +322,12 @@ func (h *VideoHandler) RemoveDevice(c echo.Context) error {
 
 // GetEncryptionKey returns the encryption key for a video
 func (h *VideoHandler) GetEncryptionKey(c echo.Context) error {
-	token := c.Param("token")
+	videoID, err := uuid.Parse(c.Param("videoId"))
+	if err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
 
-	key, err := h.videoUC.GetEncryptionKey(c.Request().Context(), token)
+	key, err := h.videoUC.GetEncryptionKeyByVideoID(c.Request().Context(), videoID)
 	if err != nil {
 		return c.NoContent(http.StatusForbidden)
 	}
@@ -415,7 +418,7 @@ func (h *VideoHandler) ServeHLS(c echo.Context) error {
 	}
 	defer stream.Close()
 
-	// Rewrite m3u8 playlist to inject token into key URI and segments
+	// Rewrite m3u8 playlist to inject token into segments (key URI uses videoID directly)
 	if strings.HasSuffix(file, ".m3u8") {
 		content, err := io.ReadAll(stream)
 		if err != nil {
@@ -425,13 +428,8 @@ func (h *VideoHandler) ServeHLS(c echo.Context) error {
 		lines := strings.Split(string(content), "\n")
 		var newLines []string
 		for _, line := range lines {
-			if strings.HasPrefix(line, "#EXT-X-KEY") {
-				// Replace key URI with tokenized URI
-				// Search for known pattern /key/<videoID> and replace with /key/<token>
-				search := fmt.Sprintf("/key/%s", videoID.String())
-				replace := fmt.Sprintf("/key/%s", token)
-				line = strings.Replace(line, search, replace, 1)
-			} else if !strings.HasPrefix(line, "#") && strings.TrimSpace(line) != "" {
+			// Keep key URI as is (uses videoID)
+			if !strings.HasPrefix(line, "#") && strings.TrimSpace(line) != "" {
 				// Append token to segment URL
 				if strings.Contains(line, "?") {
 					line = fmt.Sprintf("%s&token=%s", line, token)

@@ -42,11 +42,9 @@ export default async function SubscriptionPlansPage() {
             Manage your subscription pricing tiers
           </p>
         </div>
-        <Button>
-          <Link href="/admin/subscription-plans/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Plan
-          </Link>
+        <Button render={<Link href="/admin/subscription-plans/new" />}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Plan
         </Button>
       </div>
 

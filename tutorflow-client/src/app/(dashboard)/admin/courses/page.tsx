@@ -42,11 +42,9 @@ export default async function AdminCoursesPage({
             Manage all courses on the platform
           </p>
         </div>
-        <Button>
-          <Link href="/admin/courses/create">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Course
-          </Link>
+        <Button render={<Link href="/admin/courses/create" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Course
         </Button>
       </div>
 
@@ -58,10 +56,11 @@ export default async function AdminCoursesPage({
               key={s}
               variant={status === s ? "default" : "outline"}
               size="sm"
+              render={
+                <Link href={`/admin/courses${s ? `?status=${s}` : ""}`} />
+              }
             >
-              <Link href={`/admin/courses${s ? `?status=${s}` : ""}`}>
-                {s || "All"}
-              </Link>
+              {s || "All"}
             </Button>
           ))}
         </div>

@@ -49,11 +49,9 @@ export default async function AdminBundlesPage() {
             Create and manage course bundles
           </p>
         </div>
-        <Button>
-          <Link href="/admin/bundles/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Bundle
-          </Link>
+        <Button render={<Link href="/admin/bundles/new" />}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Bundle
         </Button>
       </div>
 
